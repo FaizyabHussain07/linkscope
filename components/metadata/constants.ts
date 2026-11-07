@@ -1,0 +1,6 @@
+export const TITLE_MAX_CHARS = 60
+export const DESCRIPTION_MAX_CHARS = 160
+export const OG_TITLE_MAX_CHARS = 60
+export const OG_DESCRIPTION_MAX_CHARS = 160
+export const TWITTER_TITLE_MAX_CHARS = 70
+export const TWITTER_DESCRIPTION_MAX_CHARS = 200
