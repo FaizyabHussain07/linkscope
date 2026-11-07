@@ -4,32 +4,32 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react"
+} from "react";
 
 interface SettingsContextType {
-  showSuggestions: boolean
-  setShowSuggestions: (value: boolean) => void
+  showSuggestions: boolean;
+  setShowSuggestions: (value: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType>({
   showSuggestions: true,
   setShowSuggestions: () => {},
-})
+});
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [showSuggestions, setShowSuggestions] = useState(true)
+  const [showSuggestions, setShowSuggestions] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem("golbat-suggestions")
+    const saved = localStorage.getItem("linkscope-suggestions");
     if (saved !== null) {
-      setShowSuggestions(saved === "true")
+      setShowSuggestions(saved === "true");
     }
-  }, [])
+  }, []);
 
   const updateShowSuggestions = (value: boolean) => {
-    setShowSuggestions(value)
-    localStorage.setItem("golbat-suggestions", String(value))
-  }
+    setShowSuggestions(value);
+    localStorage.setItem("linkscope-suggestions", String(value));
+  };
 
   return (
     <SettingsContext.Provider
@@ -40,9 +40,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </SettingsContext.Provider>
-  )
+  );
 }
 
 export function useSettings() {
-  return useContext(SettingsContext)
+  return useContext(SettingsContext);
 }

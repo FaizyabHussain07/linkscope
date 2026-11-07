@@ -200,7 +200,7 @@ function detectMissingRequired(metadata: ExtractedMetadata): void {
 
   required.forEach(check => {
     const value = metadata[check.key];
-    if (!value || value.trim() === '') {
+    if (!value || (typeof value === 'string' && value.trim() === '')) {
       metadata.missingRequired.push(check.label);
     }
   });
@@ -208,7 +208,7 @@ function detectMissingRequired(metadata: ExtractedMetadata): void {
 
 function detectWarnings(metadata: ExtractedMetadata, baseUrl: string): void {
   // Check for suspicious title length
-  if (metadata.title && metadata.title.length > 70) {
+  if (metadata.title && typeof metadata.title === 'string' && metadata.title.length > 70) {
     metadata.warnings.push({
       tag: 'title',
       type: 'suspicious_length',
@@ -219,7 +219,7 @@ function detectWarnings(metadata: ExtractedMetadata, baseUrl: string): void {
   }
 
   // Check for suspicious description length
-  if (metadata.description && metadata.description.length > 320) {
+  if (metadata.description && typeof metadata.description === 'string' && metadata.description.length > 320) {
     metadata.warnings.push({
       tag: 'description',
       type: 'suspicious_length',
@@ -230,7 +230,7 @@ function detectWarnings(metadata: ExtractedMetadata, baseUrl: string): void {
   }
 
   // Check for OG title length
-  if (metadata.ogTitle && metadata.ogTitle.length > 95) {
+  if (metadata.ogTitle && typeof metadata.ogTitle === 'string' && metadata.ogTitle.length > 95) {
     metadata.warnings.push({
       tag: 'og:title',
       type: 'suspicious_length',
@@ -241,7 +241,7 @@ function detectWarnings(metadata: ExtractedMetadata, baseUrl: string): void {
   }
 
   // Check for OG description length
-  if (metadata.ogDescription && metadata.ogDescription.length > 300) {
+  if (metadata.ogDescription && typeof metadata.ogDescription === 'string' && metadata.ogDescription.length > 300) {
     metadata.warnings.push({
       tag: 'og:description',
       type: 'suspicious_length',
@@ -286,18 +286,21 @@ function detectWarnings(metadata: ExtractedMetadata, baseUrl: string): void {
 }
 
 function resolveRelativeUrls(metadata: ExtractedMetadata, baseUrl: string): void {
-  const urlFields: Array<keyof ExtractedMetadata> = [
-    'ogImage',
-    'ogImageSecureUrl',
-    'ogUrl',
-    'canonical',
-    'twitterImage',
+  const pairs: Array<{ get: () => string | undefined; set: (v: string) => void }> = [
+    { get: () => metadata.ogImage, set: (v) => { metadata.ogImage = v; } },
+    { get: () => metadata.ogImageSecureUrl, set: (v) => { metadata.ogImageSecureUrl = v; } },
+    { get: () => metadata.ogUrl, set: (v) => { metadata.ogUrl = v; } },
+    { get: () => metadata.canonical, set: (v) => { metadata.canonical = v; } },
+    { get: () => metadata.twitterImage, set: (v) => { metadata.twitterImage = v; } },
   ];
 
-  urlFields.forEach(field => {
-    const value = metadata[field];
+  pairs.forEach(({ get, set }) => {
+    const value = get();
     if (value && typeof value === 'string') {
-      metadata[field] = resolveRelativeUrl(value, baseUrl) || value;
+      const resolved = resolveRelativeUrl(value, baseUrl);
+      if (resolved) {
+        set(resolved);
+      }
     }
   });
 }

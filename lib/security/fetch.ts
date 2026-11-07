@@ -3,25 +3,10 @@
  * Validates destination IP and enforces limits
  */
 
-import { validateFetchUrl, validateRedirectUrl, normalizeUrlForComparison } from './url-validator';
-import { isIpBlocked, DEFAULT_BLOCKED_IPS } from './ip-validator';
+import { validateFetchUrl, validateRedirectUrl } from './url-validator';
+import { DEFAULT_BLOCKED_IPS } from './ip-validator';
 
-// Default configuration
-const DEFAULT_CONFIG = {
-  timeoutMs: 30000,
-  maxRedirects: 5,
-  maxSizeBytes: 10 * 1024 * 1024, // 10MB
-  connectTimeoutMs: 10000,
-  allowedContentTypes: [
-    'text/html',
-    'text/plain',
-    'application/xhtml+xml',
-    'application/xml',
-  ],
-  userAgent: 'LinkScope/1.0 (+https://linkscope.app)',
-};
-
-interface FetchConfig {
+export interface FetchConfig {
   timeoutMs?: number;
   maxRedirects?: number;
   maxSizeBytes?: number;
@@ -30,7 +15,7 @@ interface FetchConfig {
   userAgent?: string;
 }
 
-interface FetchResult {
+export interface FetchResult {
   success: boolean;
   url: string;
   finalUrl: string;
@@ -43,12 +28,23 @@ interface FetchResult {
   error?: string;
 }
 
-/**
- * Check if content type is allowed
- */
+// Default configuration
+const DEFAULT_CONFIG: FetchConfig = {
+  timeoutMs: 30000,
+  maxRedirects: 5,
+  maxSizeBytes: 10 * 1024 * 1024,
+  connectTimeoutMs: 10000,
+  allowedContentTypes: [
+    'text/html',
+    'text/plain',
+    'application/xhtml+xml',
+    'application/xml',
+  ],
+  userAgent: 'LinkScope/1.0 (+https://linkscope.faizyab.me)',
+};
+
 function isContentTypeAllowed(contentType: string | null, allowedTypes: string[]): boolean {
   if (!contentType) return false;
-
   const normalized = contentType.toLowerCase();
   for (const allowed of allowedTypes) {
     if (normalized.startsWith(allowed.toLowerCase())) {
@@ -58,41 +54,16 @@ function isContentTypeAllowed(contentType: string | null, allowedTypes: string[]
   return false;
 }
 
-/**
- * Extract IP addresses from DNS resolution
- * This is a placeholder - in production you'd use proper DNS resolution
- */
-async function resolveHostnameIp(hostname: string): Promise<string[]> {
-  // In Node.js environment, we'd use dns module
-  // For Edge/Workers, the fetch itself handles DNS
-  // This function returns placeholder - actual IP checking happens
-  // when we can intercept the connection
-
-  // For now, we rely on the hostname validation and
-  // the runtime's built-in DNS resolution
-  // In a real deployment, you'd want to use a custom DNS resolver
-  // or validate after resolution
-
-  return [];
-}
-
-/**
- * Secure fetch with SSRF protection
- */
 export async function secureFetch(
   inputUrl: string,
   config: FetchConfig = {}
 ): Promise<FetchResult> {
-  const {
-    timeoutMs = DEFAULT_CONFIG.timeoutMs,
-    maxRedirects = DEFAULT_CONFIG.maxRedirects,
-    maxSizeBytes = DEFAULT_CONFIG.maxSizeBytes,
-    connectTimeoutMs = DEFAULT_CONFIG.connectTimeoutMs,
-    allowedContentTypes = DEFAULT_CONFIG.allowedContentTypes,
-    userAgent = DEFAULT_CONFIG.userAgent,
-  } = config;
+  const timeoutMs: number = config.timeoutMs ?? DEFAULT_CONFIG.timeoutMs;
+  const maxRedirects: number = config.maxRedirects ?? DEFAULT_CONFIG.maxRedirects;
+  const maxSizeBytes: number = config.maxSizeBytes ?? DEFAULT_CONFIG.maxSizeBytes;
+  const allowedContentTypes: string[] = config.allowedContentTypes ?? DEFAULT_CONFIG.allowedContentTypes;
+  const userAgent: string = config.userAgent ?? DEFAULT_CONFIG.userAgent;
 
-  // Validate URL
   const validation = validateFetchUrl(inputUrl);
   if (!validation.valid) {
     return {
@@ -110,10 +81,8 @@ export async function secureFetch(
   }
 
   const targetUrl = validation.cleanedUrl!;
-  const parsedTarget = new URL(targetUrl);
-  const hostname = parsedTarget.hostname;
+  const hostname = new URL(targetUrl).hostname;
 
-  // Check for blocked hostnames
   if (DEFAULT_BLOCKED_IPS.includes(hostname)) {
     return {
       success: false,
@@ -129,216 +98,98 @@ export async function secureFetch(
     };
   }
 
-  // Create abort controller for timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const startTime = Date.now();
-
-    // Build fetch options
-    const fetchOptions: RequestInit = {
-      method: 'GET',
-      headers: {
-        'User-Agent': userAgent,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      },
-      redirect: 'manual', // Handle redirects manually for validation
-      signal: controller.signal,
-    };
-
     let currentUrl = targetUrl;
     let redirectCount = 0;
     let lastResponse: Response | null = null;
 
-    while (redirectCount <= maxRedirects) {
-      // Check timeout for redirects
+    for (let i = 0; i <= maxRedirects; i++) {
+      redirectCount = i;
       if (Date.now() - startTime > timeoutMs) {
-        return {
-          success: false,
-          url: inputUrl,
-          finalUrl: currentUrl,
-          status: 0,
-          headers: {},
-          content: '',
-          contentLength: 0,
-          contentType: '',
-          redirectCount,
-          error: 'Request timed out',
-        };
+        return fail('Request timed out', inputUrl, currentUrl, redirectCount);
       }
 
-      const response = await fetch(currentUrl, fetchOptions);
+      const response = await fetch(currentUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': userAgent || 'LinkScope/1.0',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+        redirect: 'manual',
+        signal: controller.signal,
+      });
       lastResponse = response;
 
-      // Check for abort
       if (response.status === 0) {
-        return {
-          success: false,
-          url: inputUrl,
-          finalUrl: currentUrl,
-          status: 0,
-          headers: {},
-          content: '',
-          contentLength: 0,
-          contentType: '',
-          redirectCount,
-          error: 'Request was aborted',
-        };
+        return fail('Request was aborted', inputUrl, currentUrl, redirectCount);
       }
 
-      // Check status
       if (response.status >= 400) {
-        return {
-          success: false,
-          url: inputUrl,
-          finalUrl: currentUrl,
+        return fail(`HTTP error: ${response.status}`, inputUrl, currentUrl, redirectCount, {
           status: response.status,
-          headers: Object.fromEntries(response.headers.entries()),
-          content: '',
-          contentLength: 0,
           contentType: response.headers.get('content-type') || '',
-          redirectCount,
-          error: `HTTP error: ${response.status}`,
-        };
+        });
       }
 
-      // Check content type
       const contentType = response.headers.get('content-type') || '';
       if (!isContentTypeAllowed(contentType, allowedContentTypes)) {
-        // Allow some flexibility - check if it's a redirect or similar
         if (![301, 302, 303, 307, 308].includes(response.status)) {
-          return {
-            success: false,
-            url: inputUrl,
-            finalUrl: currentUrl,
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries()),
-            content: '',
-            contentLength: 0,
+          return fail(`Content type not allowed: ${contentType}`, inputUrl, currentUrl, redirectCount, {
             contentType,
-            redirectCount,
-            error: `Content type not allowed: ${contentType}`,
-          };
+          });
         }
       }
 
-      // Handle redirect
       if ([301, 302, 303, 307, 308].includes(response.status)) {
         const location = response.headers.get('location');
         if (!location) {
-          return {
-            success: false,
-            url: inputUrl,
-            finalUrl: currentUrl,
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries()),
-            content: '',
-            contentLength: 0,
+          return fail('Redirect without location header', inputUrl, currentUrl, redirectCount, {
             contentType,
-            redirectCount,
-            error: 'Redirect without location header',
-          };
+          });
         }
 
-        // Resolve redirect URL relative to current
         const redirectUrl = new URL(location, currentUrl).toString();
-
-        // Validate redirect
         const redirectValidation = validateRedirectUrl(currentUrl, redirectUrl, targetUrl);
         if (!redirectValidation.valid) {
-          return {
-            success: false,
-            url: inputUrl,
-            finalUrl: redirectUrl,
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries()),
-            content: '',
-            contentLength: 0,
+          return fail(`Invalid redirect: ${redirectValidation.error}`, inputUrl, redirectUrl, redirectCount, {
             contentType,
-            redirectCount,
-            error: `Invalid redirect: ${redirectValidation.error}`,
-          };
+          });
         }
 
-        // Check redirect doesn't exceed max
-        redirectCount++;
-        if (redirectCount > maxRedirects) {
-          return {
-            success: false,
-            url: inputUrl,
-            finalUrl: redirectUrl,
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries()),
-            content: '',
-            contentLength: 0,
-            contentType,
-            redirectCount,
-            error: `Too many redirects (${maxRedirects})`,
-          };
-        }
-
-        // Update current URL and continue
         currentUrl = redirectValidation.cleanedUrl!;
         continue;
       }
 
-      // Handle successful response
       break;
     }
 
-    // Final response - read content with size limit
     if (!lastResponse) {
-      return {
-        success: false,
-        url: inputUrl,
-        finalUrl: currentUrl,
-        status: 0,
-        headers: {},
-        content: '',
-        contentLength: 0,
-        contentType: '',
-        redirectCount,
-        error: 'No response received',
-      };
+      return fail('No response received', inputUrl, currentUrl, redirectCount);
     }
 
-    // Check content-length header first
     const contentLengthHeader = lastResponse.headers.get('content-length');
     if (contentLengthHeader) {
       const contentLength = parseInt(contentLengthHeader, 10);
       if (contentLength > maxSizeBytes) {
-        return {
-          success: false,
-          url: inputUrl,
-          finalUrl: currentUrl,
+        return fail(`Response too large: ${contentLength} bytes (max: ${maxSizeBytes})`, inputUrl, currentUrl, redirectCount, {
           status: lastResponse.status,
-          headers: Object.fromEntries(lastResponse.headers.entries()),
-          content: '',
-          contentLength: contentLength,
           contentType: lastResponse.headers.get('content-type') || '',
-          redirectCount,
-          error: `Response too large: ${contentLength} bytes (max: ${maxSizeBytes})`,
-        };
+          contentLength,
+        });
       }
     }
 
-    // Read response body with size limit
     const reader = lastResponse.body?.getReader();
     if (!reader) {
-      return {
-        success: false,
-        url: inputUrl,
-        finalUrl: currentUrl,
+      return fail('No response body', inputUrl, currentUrl, redirectCount, {
         status: lastResponse.status,
-        headers: Object.fromEntries(lastResponse.headers.entries()),
-        content: '',
-        contentLength: 0,
         contentType: lastResponse.headers.get('content-type') || '',
-        redirectCount,
-        error: 'No response body',
-      };
+      });
     }
 
     const chunks: Uint8Array[] = [];
@@ -346,53 +197,44 @@ export async function secureFetch(
 
     while (true) {
       const { done, value } = await reader.read();
-
       if (done) break;
 
       totalBytes += value.length;
       if (totalBytes > maxSizeBytes) {
-        return {
-          success: false,
-          url: inputUrl,
-          finalUrl: currentUrl,
+        return fail(`Response too large: ${totalBytes} bytes (max: ${maxSizeBytes})`, inputUrl, currentUrl, redirectCount, {
           status: lastResponse.status,
-          headers: Object.fromEntries(lastResponse.headers.entries()),
-          content: chunks.map(c => new TextDecoder().decode(c)).join(''),
-          contentLength: totalBytes,
           contentType: lastResponse.headers.get('content-type') || '',
-          redirectCount,
-          error: `Response too large: ${totalBytes} bytes (max: ${maxSizeBytes})`,
-        };
+          contentLength: totalBytes,
+          partialContent: chunks.map(c => new TextDecoder().decode(c)).join(''),
+        });
       }
 
       chunks.push(value);
 
-      // Check overall timeout
       if (Date.now() - startTime > timeoutMs) {
-        return {
-          success: false,
-          url: inputUrl,
-          finalUrl: currentUrl,
+        return fail('Request timed out while reading body', inputUrl, currentUrl, redirectCount, {
           status: lastResponse.status,
-          headers: Object.fromEntries(lastResponse.headers.entries()),
-          content: chunks.map(c => new TextDecoder().decode(c)).join(''),
-          contentLength: totalBytes,
           contentType: lastResponse.headers.get('content-type') || '',
-          redirectCount,
-          error: 'Request timed out while reading body',
-        };
+          contentLength: totalBytes,
+          partialContent: chunks.map(c => new TextDecoder().decode(c)).join(''),
+        });
       }
     }
 
     const content = chunks.map(c => new TextDecoder().decode(c)).join('');
     const finalContentType = lastResponse.headers.get('content-type') || '';
 
+    const headers: Record<string, string> = {};
+    lastResponse.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+
     return {
       success: true,
       url: inputUrl,
       finalUrl: currentUrl,
       status: lastResponse.status,
-      headers: Object.fromEntries(lastResponse.headers.entries()),
+      headers,
       content,
       contentLength: totalBytes,
       contentType: finalContentType,
@@ -401,76 +243,44 @@ export async function secureFetch(
   } catch (error) {
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        return {
-          success: false,
-          url: inputUrl,
-          finalUrl: targetUrl,
-          status: 0,
-          headers: {},
-          content: '',
-          contentLength: 0,
-          contentType: '',
-          redirectCount: 0,
-          error: 'Request timed out',
-        };
+        return fail('Request timed out', inputUrl, targetUrl, 0);
       }
-
-      // Don't leak internal error details
       if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
-        return {
-          success: false,
-          url: inputUrl,
-          finalUrl: targetUrl,
-          status: 0,
-          headers: {},
-          content: '',
-          contentLength: 0,
-          contentType: '',
-          redirectCount: 0,
-          error: 'Could not connect to the server',
-        };
+        return fail('Could not connect to the server', inputUrl, targetUrl, 0);
       }
-
-      return {
-        success: false,
-        url: inputUrl,
-        finalUrl: targetUrl,
-        status: 0,
-        headers: {},
-        content: '',
-        contentLength: 0,
-        contentType: '',
-        redirectCount: 0,
-        error: 'Request failed',
-      };
+      return fail('Request failed', inputUrl, targetUrl, 0);
     }
-
-    return {
-      success: false,
-      url: inputUrl,
-      finalUrl: targetUrl,
-      status: 0,
-      headers: {},
-      content: '',
-      contentLength: 0,
-      contentType: '',
-      redirectCount: 0,
-      error: 'Request failed',
-    };
+    return fail('Request failed', inputUrl, targetUrl, 0);
   } finally {
     clearTimeout(timeoutId);
   }
 }
 
-/**
- * Fetch with security checks specifically for images
- * Returns image metadata without loading full image into memory if possible
- */
+function fail(
+  error: string,
+  url: string,
+  finalUrl: string,
+  redirectCount: number,
+  extra?: { status?: number; contentType?: string; contentLength?: number; partialContent?: string }
+): FetchResult {
+  return {
+    success: false,
+    url,
+    finalUrl,
+    status: extra?.status ?? 0,
+    headers: {},
+    content: extra?.partialContent || '',
+    contentLength: extra?.contentLength ?? 0,
+    contentType: extra?.contentType || '',
+    redirectCount,
+    error,
+  };
+}
+
 export async function secureImageFetch(
   imageUrl: string,
   config: FetchConfig = {}
 ): Promise<FetchResult> {
-  // Validate URL
   const validation = validateFetchUrl(imageUrl);
   if (!validation.valid) {
     return {
@@ -487,7 +297,6 @@ export async function secureImageFetch(
     };
   }
 
-  // Image-specific config - allow more image content types
   const imageConfig: FetchConfig = {
     ...config,
     allowedContentTypes: [

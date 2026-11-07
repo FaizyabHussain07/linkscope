@@ -1,100 +1,105 @@
-"use client"
+"use client";
 
-import { useCallback, useState } from "react"
-import { formatUrl } from "@/lib/cache"
+import { useCallback, useState } from "react";
+import { formatUrl } from "@/lib/cache";
 
 export interface MetaData {
-  title?: string
-  description?: string
-  ogTitle?: string
-  ogDescription?: string
-  ogImage?: string
-  ogType?: string
-  ogUrl?: string
-  ogSiteName?: string
-  ogLocale?: string
-  twitterCard?: string
-  twitterTitle?: string
-  twitterDescription?: string
-  twitterImage?: string
-  twitterSite?: string
-  twitterCreator?: string
-  canonical?: string
-  favicon?: string
-  language?: string
-  charset?: string
-  viewport?: string
-  robots?: string
-  generator?: string
-  themeColor?: string
-  alternate?: string
-  author?: string
-  prev?: string
-  next?: string
-  search?: string
-  icon?: string
-  mobileApp?: string
-  mobileAppUrl?: string
-  appleItunesApp?: string
-  appleMobileWebAppCapable?: string
-  appleMobileWebAppTitle?: string
-  formatDetection?: string
-  robotsFile?: string
-  sitemap?: string
-  [key: string]: string | undefined
+  title?: string;
+  description?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogType?: string;
+  ogUrl?: string;
+  ogSiteName?: string;
+  ogLocale?: string;
+  twitterCard?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  twitterSite?: string;
+  twitterCreator?: string;
+  canonical?: string;
+  favicon?: string;
+  language?: string;
+  charset?: string;
+  viewport?: string;
+  robots?: string;
+  generator?: string;
+  themeColor?: string;
+  alternate?: string;
+  author?: string;
+  prev?: string;
+  next?: string;
+  search?: string;
+  icon?: string;
+  mobileApp?: string;
+  mobileAppUrl?: string;
+  appleItunesApp?: string;
+  appleMobileWebAppCapable?: string;
+  appleMobileWebAppTitle?: string;
+  formatDetection?: string;
+  robotsFile?: string;
+  sitemap?: string;
+  [key: string]: string | undefined;
 }
 
 export function useMetadata() {
-  const [url, setUrl] = useState("")
-  const [metadata, setMetadata] = useState<MetaData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [url, setUrl] = useState("");
+  const [metadata, setMetadata] = useState<MetaData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const fetchMetadata = useCallback(async (urlToFetch: string) => {
     if (!urlToFetch) {
-      setError("Please enter a URL")
-      return
+      setError("Please enter a URL");
+      return;
     }
 
-    const formattedUrl = formatUrl(urlToFetch)
+    const formattedUrl = formatUrl(urlToFetch);
 
     try {
-      setLoading(true)
-      setError("")
-      setMetadata(null)
+      setLoading(true);
+      setError("");
+      setMetadata(null);
 
       const response = await fetch(
-        `/api/metadata?url=${encodeURIComponent(formattedUrl)}&full=true`,
-      ).catch(() => null)
+        `/api/v1/inspect`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: formattedUrl }),
+        }
+      ).catch(() => null);
 
       if (!response || !response.ok) {
-        setError("Error fetching metadata. Please check the URL and try again.")
-        return
+        setError("Error fetching metadata. Please check the URL and try again.");
+        return;
       }
 
-      const data = await response.json().catch(() => null)
-      if (!data) {
-        setError("Error fetching metadata. Please check the URL and try again.")
-        return
+      const data = await response.json().catch(() => null);
+      if (!data || !data.success) {
+        setError(data?.error || "Error fetching metadata. Please check the URL and try again.");
+        return;
       }
 
-      setMetadata(data)
+      setMetadata(data.metadata);
     } catch {
-      setError("Error fetching metadata. Please check the URL and try again.")
+      setError("Error fetching metadata. Please check the URL and try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   const clear = useCallback(() => {
-    setUrl("")
-    setMetadata(null)
-    setError("")
-  }, [])
+    setUrl("");
+    setMetadata(null);
+    setError("");
+  }, []);
 
   const refresh = useCallback(() => {
-    if (url) fetchMetadata(url)
-  }, [url, fetchMetadata])
+    if (url) fetchMetadata(url);
+  }, [url, fetchMetadata]);
 
   return {
     url,
@@ -105,5 +110,5 @@ export function useMetadata() {
     fetchMetadata,
     clear,
     refresh,
-  }
+  };
 }

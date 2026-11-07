@@ -1,21 +1,14 @@
 import type { ExtractedMetadata, AuditResult, AuditFinding, AuditCheck, Recommendation, CategoryScore } from '@/types';
 
-interface AuditData {
-  checks: AuditCheck[];
-  findings: AuditFinding[];
-  recommendations: Recommendation[];
-  categoryScores: CategoryScore[];
-}
-
 // Scoring weights by category
 const CATEGORY_WEIGHTS: Record<string, { total: number; checks: Array<{ id: string; name: string; weight: number; check: (m: ExtractedMetadata) => boolean }> }> = {
   seo: {
     total: 25,
     checks: [
       { id: 'has-title', name: 'Has HTML Title', weight: 5, check: (m) => !!m.title },
-      { id: 'title-length', name: 'Title Length (50-60 chars)', weight: 5, check: (m) => m.title && m.title.length >= 40 && m.title.length <= 70 },
+      { id: 'title-length', name: 'Title Length (50-60 chars)', weight: 5, check: (m) => typeof m.title === 'string' && m.title.length >= 40 && m.title.length <= 70 },
       { id: 'has-description', name: 'Has Meta Description', weight: 5, check: (m) => !!m.description },
-      { id: 'description-length', name: 'Description Length (150-160 chars)', weight: 5, check: (m) => m.description && m.description.length >= 120 && m.description.length <= 160 },
+      { id: 'description-length', name: 'Description Length (150-160 chars)', weight: 5, check: (m) => typeof m.description === 'string' && m.description.length >= 120 && m.description.length <= 160 },
       { id: 'has-canonical', name: 'Has Canonical URL', weight: 5, check: (m) => !!m.canonical },
     ],
   },
@@ -29,7 +22,7 @@ const CATEGORY_WEIGHTS: Record<string, { total: number; checks: Array<{ id: stri
       { id: 'og-type', name: 'Has OG Type', weight: 3, check: (m) => !!m.ogType },
       { id: 'og-site-name', name: 'Has OG Site Name', weight: 3, check: (m) => !!m.ogSiteName },
       { id: 'og-locale', name: 'Has OG Locale', weight: 2, check: (m) => !!m.ogLocale },
-      { id: 'og-image-dims', name: 'OG Image Dimensions', weight: 6, check: (m) => m.ogImageWidth && m.ogImageHeight && m.ogImageWidth >= 1200 && m.ogImageHeight >= 630 },
+      { id: 'og-image-dims', name: 'OG Image Dimensions', weight: 6, check: (m) => typeof m.ogImageWidth === 'number' && typeof m.ogImageHeight === 'number' && m.ogImageWidth >= 1200 && m.ogImageHeight >= 630 },
     ],
   },
   twitter: {
@@ -200,17 +193,17 @@ export function performAudit(metadata: ExtractedMetadata): AuditResult {
   }
 
   // Check for title/description length issues
-  if (metadata.title && metadata.title.length < 30) {
+  if (metadata.title && typeof metadata.title === 'string' && metadata.title.length < 30) {
     recommendations.push({
       priority: 'medium',
       category: 'SEO',
-      title: ' lengthen Your Title',
+      title: 'Lengthen Your Title',
       description: 'Your HTML title is very short. Longer titles (50-60 characters) typically perform better in search results.',
       implementation: 'Expand your title to include more relevant keywords while staying under 60 characters.',
     });
   }
 
-  if (metadata.description && metadata.description.length < 100) {
+  if (metadata.description && typeof metadata.description === 'string' && metadata.description.length < 100) {
     recommendations.push({
       priority: 'medium',
       category: 'SEO',

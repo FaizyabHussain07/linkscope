@@ -1,17 +1,17 @@
-import { cn } from "@/lib/utils"
-import { PreviewProps } from "./types"
-import { useState } from "react"
-import { ImageOff } from "lucide-react"
-import { getUrlHostname } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import { PreviewProps } from "./types";
+import { useState } from "react";
+import { ImageOff } from "lucide-react";
+import { getUrlHostname } from "@/lib/utils";
 
 export function SlackPreview({ metadata, url }: PreviewProps) {
-  const [imageError, setImageError] = useState(false)
-  const [imageLoading, setImageLoading] = useState(true)
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
-  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url
-  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription
-  const image = metadata.ogImage || metadata.twitterImage
-  const siteName = metadata.ogSiteName || getUrlHostname(url)
+  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url;
+  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription;
+  const image = metadata.ogImage || metadata.twitterImage;
+  const siteName = metadata.ogSiteName || getUrlHostname(url);
 
   return (
     <div className="border border-[#1d9bd1] rounded-md overflow-hidden bg-[#f8f8f8] dark:bg-[#1d1d1d] max-w-md">
@@ -33,8 +33,8 @@ export function SlackPreview({ metadata, url }: PreviewProps) {
                 )}
                 onLoad={() => setImageLoading(false)}
                 onError={() => {
-                  setImageError(true)
-                  setImageLoading(false)
+                  setImageError(true);
+                  setImageLoading(false);
                 }}
               />
             </div>
@@ -57,5 +57,5 @@ export function SlackPreview({ metadata, url }: PreviewProps) {
         )}
       </div>
     </div>
-  )
+  );
 }

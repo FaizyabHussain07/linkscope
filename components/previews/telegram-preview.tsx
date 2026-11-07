@@ -1,16 +1,16 @@
-import { cn } from "@/lib/utils"
-import { PreviewProps } from "./types"
-import { useState } from "react"
-import { ImageOff } from "lucide-react"
-import { getUrlHostname } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import { PreviewProps } from "./types";
+import { useState } from "react";
+import { ImageOff } from "lucide-react";
+import { getUrlHostname } from "@/lib/utils";
 
 export function TelegramPreview({ metadata, url }: PreviewProps) {
-  const [imageError, setImageError] = useState(false)
-  const [imageLoading, setImageLoading] = useState(true)
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
-  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url
-  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription
-  const image = metadata.ogImage || metadata.twitterImage
+  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url;
+  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription;
+  const image = metadata.ogImage || metadata.twitterImage;
 
   return (
     <div className="border border-[#e8e8e8] dark:border-[#2e2e2e] rounded-lg overflow-hidden bg-[#ffffff] dark:bg-[#1c1c1c] max-w-md">
@@ -30,8 +30,8 @@ export function TelegramPreview({ metadata, url }: PreviewProps) {
             )}
             onLoad={() => setImageLoading(false)}
             onError={() => {
-              setImageError(true)
-              setImageLoading(false)
+              setImageError(true);
+              setImageLoading(false);
             }}
           />
         </div>
@@ -54,5 +54,5 @@ export function TelegramPreview({ metadata, url }: PreviewProps) {
         )}
       </div>
     </div>
-  )
+  );
 }

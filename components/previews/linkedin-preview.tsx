@@ -1,17 +1,17 @@
-import { cn } from "@/lib/utils"
-import { PreviewProps } from "./types"
-import { useState } from "react"
-import { ImageOff } from "lucide-react"
-import { getUrlHostname } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import { PreviewProps } from "./types";
+import { useState } from "react";
+import { ImageOff } from "lucide-react";
+import { getUrlHostname } from "@/lib/utils";
 
 export function LinkedInPreview({ metadata, url }: PreviewProps) {
-  const [imageError, setImageError] = useState(false)
-  const [imageLoading, setImageLoading] = useState(true)
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
-  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url
-  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription
-  const image = metadata.ogImage || metadata.twitterImage
-  const siteName = metadata.ogSiteName || getUrlHostname(url)
+  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url;
+  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription;
+  const image = metadata.ogImage || metadata.twitterImage;
+  const siteName = metadata.ogSiteName || getUrlHostname(url);
 
   return (
     <div className="border border-[#cfd9de] dark:border-[#38444f] rounded-[2px] overflow-hidden bg-[#ffffff] dark:bg-[#1a1a1a] max-w-md">
@@ -31,8 +31,8 @@ export function LinkedInPreview({ metadata, url }: PreviewProps) {
             )}
             onLoad={() => setImageLoading(false)}
             onError={() => {
-              setImageError(true)
-              setImageLoading(false)
+              setImageError(true);
+              setImageLoading(false);
             }}
           />
         </div>
@@ -55,5 +55,5 @@ export function LinkedInPreview({ metadata, url }: PreviewProps) {
         )}
       </div>
     </div>
-  )
+  );
 }
