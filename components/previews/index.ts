@@ -1,9 +1,7 @@
-export { BasePreview } from "./base-preview"
-export { TelegramPreview } from "./telegram-preview"
-export { DiscordPreview } from "./discord-preview"
-export { SlackPreview } from "./slack-preview"
-export { XPreview } from "./x-preview"
-export { FacebookPreview } from "./facebook-preview"
-export { LinkedInPreview } from "./linkedin-preview"
-export { WhatsAppPreview } from "./whatsapp-preview"
-export type { PreviewProps, Platform, PlatformInfo } from "./types"
+export { TelegramPreview } from './telegram-preview';
+export { DiscordPreview } from './discord-preview';
+export { SlackPreview } from './slack-preview';
+export { XPreview } from './x-preview';
+export { FacebookPreview } from './facebook-preview';
+export { LinkedInPreview } from './linkedin-preview';
+export { WhatsAppPreview } from './whatsapp-preview';
