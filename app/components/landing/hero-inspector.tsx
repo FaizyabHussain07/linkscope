@@ -80,7 +80,7 @@ export function HeroInspector() {
         </form>
       </div>
 
-      <Tabs value={platform} onValueChange={setPlatform}>
+      <Tabs defaultValue="telegram" value={platform} onValueChange={setPlatform}>
         <TabsList className="grid grid-cols-6 gap-1 bg-[#111113] p-1 rounded-xl">
           {PLATFORMS.map((p) => (
             <TabsTrigger
