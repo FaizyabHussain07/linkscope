@@ -1,61 +1,39 @@
-import { cn } from "@/lib/utils";
-import { PreviewProps } from "./types";
-import { useState } from "react";
-import { ImageOff } from "lucide-react";
-import { getUrlHostname } from "@/lib/utils";
+import { ExtractedMetadata } from '@/types';
+import { cn } from '@/lib/utils';
 
-export function SlackPreview({ metadata, url }: PreviewProps) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
+interface SlackPreviewProps {
+  metadata: ExtractedMetadata;
+  url: string;
+  className?: string;
+}
 
-  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url;
-  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription;
-  const image = metadata.ogImage || metadata.twitterImage;
-  const siteName = metadata.ogSiteName || getUrlHostname(url);
-
+export function SlackPreview({ metadata, url, className }: SlackPreviewProps) {
+  const siteName = metadata.ogSiteName || new URL(url).hostname;
+  
   return (
-    <div className="border border-[#1d9bd1] rounded-md overflow-hidden bg-[#f8f8f8] dark:bg-[#1d1d1d] max-w-md">
-      <div className="p-3 space-y-2">
-        <div className="flex items-center gap-2">
-          {image && !imageError ? (
-            <div className="relative w-6 h-6 rounded bg-[#f8f8f8] dark:bg-[#1d1d1d] overflow-hidden shrink-0">
-              {imageLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-[#f8f8f8] dark:bg-[#1d1d1d]">
-                  <div className="w-3 h-3 border border-[#1d9bd1]/30 border-t-[#1d9bd1] rounded-full animate-spin" />
-                </div>
-              )}
-              <img
-                src={image}
-                alt={title}
-                className={cn(
-                  "w-full h-full object-cover transition-opacity duration-300",
-                  imageLoading ? "opacity-0" : "opacity-100"
-                )}
-                onLoad={() => setImageLoading(false)}
-                onError={() => {
-                  setImageError(true);
-                  setImageLoading(false);
-                }}
-              />
-            </div>
-          ) : (
-            <div className="w-6 h-6 rounded bg-[#f8f8f8] dark:bg-[#1d1d1d] flex items-center justify-center shrink-0">
-              <ImageOff className="w-3 h-3 text-[#616061]" />
-            </div>
-          )}
-          <p className="text-[#616061] text-xs truncate">
-            {siteName}
-          </p>
+    <div className={cn('flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm', className)}>
+      {metadata.ogImage && (
+        <div className="overflow-hidden rounded border border-gray-200 bg-gray-100" style={{ aspectRatio: '1.91/1', maxHeight: '100px' }}>
+          <img
+            src={metadata.ogImage}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         </div>
-        <p className="text-[#1d9bd1] font-medium text-sm line-clamp-1">
-          {title}
-        </p>
-        {description && (
-          <p className="text-[#616061] text-xs line-clamp-2 leading-relaxed">
-            {description}
-          </p>
-        )}
+      )}
+      
+      <div className="flex items-center gap-2 text-xs text-gray-500">
+        <span>{siteName}</span>
       </div>
+      
+      <h3 className="text-[15px] font-semibold text-gray-900 leading-snug line-clamp-2">
+        {metadata.ogTitle || metadata.title || 'No title available'}
+      </h3>
+      
+      <p className="text-[13px] text-gray-600 leading-snug line-clamp-2">
+        {metadata.ogDescription || metadata.description || 'No description available'}
+      </p>
     </div>
   );
 }
