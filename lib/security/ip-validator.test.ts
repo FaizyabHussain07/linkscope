@@ -15,4 +15,16 @@ describe("IP blocking", () => {
     expect(isIpBlocked("::1")).toBe(true)
     expect(isIpBlocked("fd00::1")).toBe(true)
   })
+
+  it("blocks IPv4-mapped private IPv6 addresses", () => {
+    expect(isIpBlocked("::ffff:127.0.0.1")).toBe(true)
+    expect(isIpBlocked("::ffff:192.168.1.10")).toBe(true)
+    expect(isIpBlocked("::ffff:104.20.23.154")).toBe(false)
+  })
+
+  it("blocks non-public IPv4 ranges", () => {
+    expect(isIpBlocked("100.64.0.1")).toBe(true)
+    expect(isIpBlocked("198.19.0.1")).toBe(true)
+    expect(isIpBlocked("240.0.0.1")).toBe(true)
+  })
 })

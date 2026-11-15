@@ -9,12 +9,12 @@ const FEATURES = [
   {
     icon: Shield,
     title: "Privacy-First Architecture",
-    description: "No database. No accounts. No tracking. Your inspection data never leaves your browser or gets stored.",
+    description: "No account or server-side inspection history. The page is fetched to produce your report; recent URLs stay in your browser until you clear them.",
   },
   {
     icon: Zap,
     title: "Secure Server-Side Fetching",
-    description: "Enterprise-grade SSRF protection with IP validation, private range blocking, and redirect security.",
+    description: "HTTP(S)-only fetching with address checks, redirect limits, response-size limits, and request timeouts.",
   },
   {
     icon: MessageCircle,
@@ -56,12 +56,7 @@ export default function LandingPage() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] shadow-lg shadow-[#6366F1]/20">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-white">
-                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
+              <img src="/linkscope-icon.svg" alt="" className="h-9 w-9 rounded-xl" />
               <span className="text-lg font-semibold tracking-tight">LinkScope</span>
             </Link>
           </div>
@@ -135,7 +130,7 @@ export default function LandingPage() {
             </span>
             <span className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-400" />
-              No data stored
+              No server-side history
             </span>
             <span className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-400" />
@@ -166,7 +161,7 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Preview across platforms</h2>
             <p className="mt-4 text-lg text-[#A1A1AA] max-w-xl mx-auto">
-              See exactly how your content appears when shared. Professional simulations for every major platform.
+              Preview the metadata each platform may use. These simulations help you spot issues; platform rendering can vary.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
@@ -253,7 +248,7 @@ export default function LandingPage() {
             <Badge variant="outline" className="mx-auto mb-4 border-green-500/30 text-green-400 bg-green-500/10">
               Security
             </Badge>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Enterprise security</h2>
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Safer URL inspection</h2>
             <p className="mt-4 text-lg text-[#A1A1AA] max-w-xl mx-auto">
               Built with security as a priority. Comprehensive protections against SSRF and other threats.
             </p>

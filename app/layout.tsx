@@ -15,12 +15,15 @@ const geistMono = Geist_Mono({
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://linkscope.faizyab.me";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
+  alternates: { canonical: "/" },
   title: "LinkScope — See how your links look everywhere",
   description: "Inspect, test, and debug how your website links appear across social platforms. Analyze Open Graph, Twitter Card, and SEO metadata with actionable recommendations.",
   keywords: ["link preview", "open graph", "twitter cards", "meta tags", "social media preview", "SEO audit", "metadata inspector"],
   authors: [{ name: "LinkScope" }],
   icons: {
     icon: "/icon.svg",
+    shortcut: "/icon.svg",
     apple: "/icon.svg",
   },
   openGraph: {
@@ -29,7 +32,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: `${baseUrl}/og.png`,
+        url: `${baseUrl}/og.svg`,
         width: 1200,
         height: 630,
         alt: "LinkScope — See how your links look everywhere",
@@ -40,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "LinkScope — See how your links look everywhere",
     description: "Inspect, test, and debug how your website links appear across social platforms.",
-    images: [`${baseUrl}/og.png`],
+    images: [`${baseUrl}/og.svg`],
   },
 };
 

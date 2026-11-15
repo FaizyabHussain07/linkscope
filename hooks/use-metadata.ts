@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { formatUrl } from "@/lib/cache";
 import type { ExtractedMetadata } from "@/types";
 
@@ -11,8 +11,11 @@ export function useMetadata() {
   const [metadata, setMetadata] = useState<MetaData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const activeRequest = useRef<AbortController | null>(null);
+  const inFlight = useRef(false);
 
   const fetchMetadata = useCallback(async (urlToFetch: string) => {
+    if (inFlight.current) return;
     if (!urlToFetch) {
       setError("Please enter a URL");
       return;
@@ -21,9 +24,11 @@ export function useMetadata() {
     const formattedUrl = formatUrl(urlToFetch);
 
     try {
+      inFlight.current = true;
+      const controller = new AbortController();
+      activeRequest.current = controller;
       setLoading(true);
       setError("");
-      setMetadata(null);
 
       const response = await fetch(
         `/api/v1/inspect`,
@@ -31,6 +36,7 @@ export function useMetadata() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: formattedUrl }),
+          signal: controller.signal,
         }
       ).catch(() => null);
 
@@ -49,11 +55,15 @@ export function useMetadata() {
     } catch {
       setError("Error fetching metadata. Please check the URL and try again.");
     } finally {
+      inFlight.current = false;
+      activeRequest.current = null;
       setLoading(false);
     }
   }, []);
 
   const clear = useCallback(() => {
+    activeRequest.current?.abort();
+    inFlight.current = false;
     setUrl("");
     setMetadata(null);
     setError("");

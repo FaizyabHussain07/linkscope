@@ -31,6 +31,14 @@
 - **⚖️ Comparison Tool** - Compare metadata between URLs
 - **📥 Export** - JSON, CSV, and copy functionality
 
+### Public pages
+- `/inspect` — interactive single-URL inspection
+- `/tools` — metadata generator, bulk inspection, comparison, and exports
+- `/features` — product capabilities
+- `/guides/open-graph` — Open Graph implementation guide
+- `/faq` — product and metadata troubleshooting answers
+- `/privacy` — current transient-processing privacy policy
+
 ### Platform Previews
 - Facebook-style link previews
 - LinkedIn-style link previews
