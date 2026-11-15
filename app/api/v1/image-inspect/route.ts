@@ -11,9 +11,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { url } = z.object({
+    const parsed = z.object({
       url: z.string().url(),
-    }).parse(body);
+    }).safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: parsed.error.errors[0]?.message || 'Invalid URL' },
+        { status: 400 }
+      );
+    }
+    const { url } = parsed.data;
 
     // Fetch the URL
     const fetchResult = await secureFetch(url, {

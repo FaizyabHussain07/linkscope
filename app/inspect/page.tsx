@@ -161,6 +161,9 @@ function LinkScopeContent() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <a href="/tools" className="hidden text-sm text-foreground/70 transition-colors hover:text-foreground sm:inline">
+              Tools
+            </a>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button

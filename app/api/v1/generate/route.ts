@@ -23,7 +23,14 @@ export async function POST(request: NextRequest) {
       locale: z.string().optional(),
     });
 
-    const data = schema.parse(body);
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation error', details: parsed.error.errors },
+        { status: 400 }
+      );
+    }
+    const data = parsed.data;
 
     // Generate metadata code
     const generated = generateMetadataCode(data);

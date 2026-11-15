@@ -69,6 +69,7 @@ export default function LandingPage() {
             <Link href="#features" className="text-sm text-[#A1A1AA] transition-colors hover:text-white">Features</Link>
             <Link href="#platforms" className="text-sm text-[#A1A1AA] transition-colors hover:text-white">Platforms</Link>
             <Link href="#security" className="text-sm text-[#A1A1AA] transition-colors hover:text-white">Security</Link>
+            <Link href="/tools" className="text-sm text-[#A1A1AA] transition-colors hover:text-white">Tools</Link>
             <Link href="https://github.com/FaizyabHussain07/linkscope" className="text-sm text-[#A1A1AA] transition-colors hover:text-white" target="_blank" rel="noopener noreferrer">GitHub</Link>
           </nav>
           <div className="flex items-center gap-3">

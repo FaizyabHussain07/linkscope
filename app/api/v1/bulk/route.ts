@@ -12,10 +12,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { urls, concurrency = INSPECTION_LIMITS.maxConcurrency } = z.object({
+    const parsed = z.object({
       urls: z.array(z.string().url()),
       concurrency: z.number().int().min(1).max(INSPECTION_LIMITS.maxConcurrency).optional(),
-    }).parse(body);
+    }).safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid request' }, { status: 400 });
+    }
+    const { urls, concurrency = INSPECTION_LIMITS.maxConcurrency } = parsed.data;
 
     if (urls.length === 0 || urls.length > INSPECTION_LIMITS.maxBulkUrls) {
       return NextResponse.json(

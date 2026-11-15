@@ -69,7 +69,7 @@ export function HeroInspector() {
           <span className="text-sm font-medium">LinkScope</span>
         </div>
         <Badge variant="secondary" className="bg-[#18181B] text-[#A1A1AA] border-[#27272A]">
-          Demo inspection
+          Live inspection
         </Badge>
       </div>
 

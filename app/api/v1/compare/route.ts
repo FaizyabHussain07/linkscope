@@ -11,10 +11,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { url1, url2 } = z.object({
+    const parsed = z.object({
       url1: z.string().url(),
       url2: z.string().url(),
-    }).parse(body);
+    }).safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.errors[0]?.message || 'Invalid request' }, { status: 400 });
+    }
+    const { url1, url2 } = parsed.data;
 
     // Fetch both URLs
     const [result1, result2] = await Promise.all([
