@@ -23,7 +23,7 @@ import {
   RawMetadata,
 } from "@/components/metadata-tabs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Copy, X, Check, ChevronDown, Shield, ExternalLink } from "lucide-react";
+import { AlertCircle, Copy, Check, ChevronDown, Shield, ExternalLink } from "lucide-react";
 import { GitHubStars } from "@/components/github-stars";
 import { Button } from "@/components/ui/button";
 import { formatUrl } from "@/lib/cache";
@@ -44,19 +44,14 @@ function LinkScopeContent() {
     refresh,
   } = useMetadata();
 
-  const [localError, setLocalError] = useState<string>("");
+  const [localError, setLocalError] = useState("");
   const [localhostExpanded, setLocalhostExpanded] = useState(true);
   const [copiedInstall, setCopiedInstall] = useState(false);
   const [copiedTunnel, setCopiedTunnel] = useState(false);
-  const [recentUrls, setRecentUrls] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      return getRecentUrls();
-    }
-    return [];
-  });
-  const [githubStars, setGithubStars] = useState<number>(0);
+  const [recentUrls, setRecentUrls] = useState<string[]>([]);
+  const [githubStars, setGithubStars] = useState(0);
   const [securityNote, setSecurityNote] = useState(false);
-  const lastAddedUrlRef = useRef<string>("");
+  const lastAddedUrlRef = useRef("");
 
   const handleSubmit = useCallback(
     (urlToFetch: string) => {
@@ -83,12 +78,18 @@ function LinkScopeContent() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setRecentUrls(getRecentUrls());
+    }
+  }, []);
+
+  useEffect(() => {
     if (metadata && url && !loading && lastAddedUrlRef.current !== url) {
       addRecentUrl(url);
       lastAddedUrlRef.current = url;
-      requestAnimationFrame(() => {
+      if (typeof window !== "undefined") {
         setRecentUrls(getRecentUrls());
-      });
+      }
     }
   }, [metadata, url, loading]);
 
@@ -135,8 +136,10 @@ function LinkScopeContent() {
     onClear: clear,
     onRefresh: refresh,
     onFocusInput: () => {
-      const input = document.querySelector('input[type="url"]') as HTMLInputElement;
-      input?.focus();
+      const input = document.querySelector('input[type="url"]');
+      if (input) {
+        (input as HTMLInputElement).focus();
+      }
     },
   });
 
@@ -168,7 +171,7 @@ function LinkScopeContent() {
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Security protected · SSRF safe</p>
+                <p>Security protected - SSRF safe</p>
               </TooltipContent>
             </Tooltip>
             <a
@@ -264,8 +267,14 @@ function LinkScopeContent() {
                               )}
                             </button>
                           </div>
+                        </div>
                         <div className="space-y-1.5">
-                          <div className="text-xs text-foreground/60">2. RUN TUNNEL</div>
+                          <div className="text-xs text-foreground/60">
+                            2. START YOUR LOCAL SERVER ON PORT 3000
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="text-xs text-foreground/60">3. RUN TUNNEL</div>
                           <div className="flex items-center gap-2 group">
                             <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono text-foreground/90">
                               ngrok http 3000
@@ -287,6 +296,11 @@ function LinkScopeContent() {
                             </button>
                           </div>
                         </div>
+                        <div className="space-y-1.5">
+                          <div className="text-xs text-foreground/60">
+                            4. COPY THE HTTPS URL FROM THE OUTPUT
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -294,6 +308,194 @@ function LinkScopeContent() {
               </div>
             )}
           </div>
+
+          {securityNote && (
+            <div className="flex items-start gap-3 p-4 bg-brand-500/10 border border-brand-500/20 rounded-lg">
+              <Shield className="w-5 h-5 text-brand-500 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-brand-500 mb-1">Security Protected</p>
+                <p className="text-foreground/80">
+                  All URLs are validated and checked for SSRF vulnerabilities before fetching.
+                  Private IPs, localhost, and cloud metadata endpoints are blocked.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {loading && (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] py-24">
+              <div className="loader" style={{ color: "var(--foreground)" }} />
+            </div>
+          )}
+
+          {(error || localError) && !loading && (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 mb-4">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Unable to fetch preview</h2>
+              <p className="text-muted-foreground text-center max-w-md">
+                {error || localError}
+              </p>
+              <Button onClick={clear} variant="outline" className="mt-4">
+                Try another URL
+              </Button>
+            </div>
+          )}
+
+          {metadata && !loading && !error && !localError && (
+            <Tabs defaultValue="score" className="w-full">
+              <div className="w-full overflow-x-auto">
+                <TabsList className="inline-flex w-max min-w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
+                  <TabsTrigger
+                    value="score"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                  >
+                    SCORE
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="previews"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                  >
+                    PREVIEWS
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="basic"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                  >
+                    BASIC
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="opengraph"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                  >
+                    OPEN GRAPH
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="x"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                  >
+                    X
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="images"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                  >
+                    IMAGES
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="raw"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                  >
+                    RAW
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="score" className="mt-8">
+                <ScoreDisplay metadata={metadata} />
+              </TabsContent>
+
+              <TabsContent value="previews" className="mt-8">
+                <Tabs defaultValue="telegram" className="w-full">
+                  <div className="w-full overflow-x-auto">
+                    <TabsList className="inline-flex w-max min-w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
+                      <TabsTrigger
+                        value="telegram"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                      >
+                        TELEGRAM
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="discord"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                      >
+                        DISCORD
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="slack"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                      >
+                        SLACK
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="x"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                      >
+                        X
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="facebook"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                      >
+                        FACEBOOK
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="linkedin"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                      >
+                        LINKEDIN
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="whatsapp"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                      >
+                        WHATSAPP
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="telegram" className="mt-8">
+                    <TelegramPreview metadata={metadata} url={url} />
+                  </TabsContent>
+
+                  <TabsContent value="discord" className="mt-8">
+                    <DiscordPreview metadata={metadata} url={url} />
+                  </TabsContent>
+
+                  <TabsContent value="slack" className="mt-8">
+                    <SlackPreview metadata={metadata} url={url} />
+                  </TabsContent>
+
+                  <TabsContent value="x" className="mt-8">
+                    <XPreview metadata={metadata} url={url} />
+                  </TabsContent>
+
+                  <TabsContent value="facebook" className="mt-8">
+                    <FacebookPreview metadata={metadata} url={url} />
+                  </TabsContent>
+
+                  <TabsContent value="linkedin" className="mt-8">
+                    <LinkedInPreview metadata={metadata} url={url} />
+                  </TabsContent>
+
+                  <TabsContent value="whatsapp" className="mt-8">
+                    <WhatsAppPreview metadata={metadata} url={url} />
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+
+              <TabsContent value="basic" className="mt-8">
+                <BasicMetadata metadata={metadata} />
+              </TabsContent>
+
+              <TabsContent value="opengraph" className="mt-8">
+                <OpenGraphMetadata metadata={metadata} />
+              </TabsContent>
+
+              <TabsContent value="x" className="mt-8">
+                <TwitterMetadata metadata={metadata} />
+              </TabsContent>
+
+              <TabsContent value="images" className="mt-8">
+                <ImagesMetadata metadata={metadata} />
+              </TabsContent>
+
+              <TabsContent value="raw" className="mt-8">
+                <RawMetadata metadata={metadata} />
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </main>
     </div>
