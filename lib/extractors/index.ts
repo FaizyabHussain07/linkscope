@@ -85,222 +85,159 @@ export function extractMetadata(html: string, baseUrl: string): ExtractedMetadat
 
   // Extract SEO tags
   metadata.description = getMetaContent($, 'name', 'description');
-  metadata.canonical = resolveRelativeUrl(getLinkHref($, 'canonical'), baseUrl);
-  metadata.language = $('html').attr('lang');
-  metadata.charset = $('meta[charset]').attr('charset');
+  metadata.canonical = getLinkHref($, 'rel', 'canonical');
+  metadata.language = $('html').attr('lang') || $('html').attr('xml:lang');
+  metadata.charset = $('meta[http-equiv="Content-Type"]').attr('content')?.match(/charset=([^;]+)/)?.[1];
   metadata.viewport = getMetaContent($, 'name', 'viewport');
   metadata.robots = getMetaContent($, 'name', 'robots');
   metadata.generator = getMetaContent($, 'name', 'generator');
   metadata.themeColor = getMetaContent($, 'name', 'theme-color');
 
   // Extract favicon
-  metadata.favicon = resolveRelativeUrl(
-    getLinkHref($, 'icon') ||
-    getLinkHref($, 'shortcut icon') ||
-    getLinkHref($, 'apple-touch-icon') ||
-    getLinkHref($, 'apple-touch-icon-precomposed') ||
-    getLinkHref($, 'fluid-icon'),
-    baseUrl
-  );
+  const favicon = getLinkHref($, 'rel', /^(icon|shortcut icon|x-icon)$/i);
+  if (favicon) metadata.favicon = favicon;
 
-  // Fallback favicon
-  if (!metadata.favicon) {
-    metadata.favicon = `${baseUrlObj.protocol}//${baseUrlObj.host}/favicon.ico`;
+  // Extract alternate links
+  metadata.alternate = getLinkHref($, 'rel', 'alternate');
+  metadata.author = getMetaContent($, 'name', 'author');
+  metadata.prev = getLinkHref($, 'rel', 'prev');
+  metadata.next = getLinkHref($, 'rel', 'next');
+  metadata.search = getLinkHref($, 'rel', 'search');
+  metadata.icon = getLinkHref($, 'rel', 'icon');
+
+  // Extract robots.txt and sitemap
+  try {
+    metadata.robotsFile = new URL('/robots.txt', baseUrlObj).href;
+    metadata.sitemap = new URL('/sitemap.xml', baseUrlObj).href;
+  } catch {
+    // Invalid base URL
   }
 
-  // Detect duplicates
+  // Detect duplicates and issues
   detectDuplicates(metadata);
-
-  // Detect empty tags
-  detectEmptyTags(metadata);
-
-  // Detect missing required tags
   detectMissingRequired(metadata);
-
-  // Detect warnings
-  detectWarnings(metadata, baseUrl);
-
-  // Resolve relative URLs
-  resolveRelativeUrls(metadata, baseUrl);
+  detectWarnings(metadata);
 
   return metadata;
 }
 
 function getMetaContent($: cheerio.CheerioAPI, attrName: string, attrValue: string): string | undefined {
-  const content = $(`meta[${attrName}="${attrValue}"]`).attr('content');
-  return content?.trim();
+  const elem = $(`meta[${attrName}="${attrValue}"]`).first();
+  return elem.attr('content') || undefined;
 }
 
-function getLinkHref($: cheerio.CheerioAPI, rel: string): string | undefined {
-  const href = $(`link[rel="${rel}"]`).attr('href');
-  return href?.trim();
+function getLinkHref($: cheerio.CheerioAPI, attrName: string, attrValue: string | RegExp): string | undefined {
+  let elem;
+  if (attrValue instanceof RegExp) {
+    elem = $(`link[rel]`).filter((_, el) => {
+      const rel = $(el).attr('rel') || '';
+      return attrValue.test(rel);
+    }).first();
+  } else {
+    elem = $(`link[rel="${attrValue}"]`).first();
+  }
+  return elem.attr('href') || undefined;
 }
 
 function detectDuplicates(metadata: ExtractedMetadata): void {
-  const tagCounts = new Map<string, number>();
-
-  // Count OG tags
-  metadata.rawMetaTags.forEach(tag => {
-    if (tag.property) {
-      const key = `og:${tag.property}`;
-      tagCounts.set(key, (tagCounts.get(key) || 0) + 1);
+  const tagMap = new Map<string, RawMetaTag[]>();
+  
+  for (const tag of metadata.rawMetaTags) {
+    const key = `${tag.name || tag.property || tag.httpEquiv}`;
+    if (!tagMap.has(key)) {
+      tagMap.set(key, []);
     }
-    if (tag.name) {
-      const key = `twitter:${tag.name}`;
-      tagCounts.set(key, (tagCounts.get(key) || 0) + 1);
-    }
-  });
+    tagMap.get(key)!.push(tag);
+  }
 
-  // Count link tags
-  metadata.rawLinkTags.forEach(tag => {
-    const key = `link:${tag.rel}`;
-    tagCounts.set(key, (tagCounts.get(key) || 0) + 1);
-  });
-
-  // Find duplicates
-  tagCounts.forEach((count, key) => {
-    if (count > 1) {
+  for (const [key, tags] of tagMap) {
+    if (tags.length > 1) {
       metadata.duplicates.push(key);
     }
-  });
-}
-
-function detectEmptyTags(metadata: ExtractedMetadata): void {
-  const emptyChecks: Array<{ key: keyof ExtractedMetadata; label: string }> = [
-    { key: 'title', label: 'title' },
-    { key: 'description', label: 'meta description' },
-    { key: 'ogTitle', label: 'og:title' },
-    { key: 'ogDescription', label: 'og:description' },
-    { key: 'ogImage', label: 'og:image' },
-    { key: 'ogUrl', label: 'og:url' },
-    { key: 'ogType', label: 'og:type' },
-    { key: 'ogSiteName', label: 'og:site_name' },
-    { key: 'twitterCard', label: 'twitter:card' },
-    { key: 'twitterTitle', label: 'twitter:title' },
-    { key: 'twitterDescription', label: 'twitter:description' },
-    { key: 'twitterImage', label: 'twitter:image' },
-    { key: 'canonical', label: 'canonical URL' },
-    { key: 'viewport', label: 'viewport' },
-    { key: 'language', label: 'language' },
-  ];
-
-  emptyChecks.forEach(check => {
-    const value = metadata[check.key];
-    if (value === undefined || value === null || value === '') {
-      metadata.emptyTags.push(check.label);
-    }
-  });
+  }
 }
 
 function detectMissingRequired(metadata: ExtractedMetadata): void {
-  const required: Array<{ key: keyof ExtractedMetadata; label: string }> = [
-    { key: 'title', label: 'title' },
-    { key: 'description', label: 'meta description' },
-  ];
-
-  required.forEach(check => {
-    const value = metadata[check.key];
-    if (!value || (typeof value === 'string' && value.trim() === '')) {
-      metadata.missingRequired.push(check.label);
-    }
-  });
+  if (!metadata.title) metadata.missingRequired.push('title');
+  if (!metadata.description) metadata.missingRequired.push('description');
+  if (!metadata.ogTitle) metadata.missingRequired.push('og:title');
+  if (!metadata.ogDescription) metadata.missingRequired.push('og:description');
+  if (!metadata.ogImage) metadata.missingRequired.push('og:image');
 }
 
-function detectWarnings(metadata: ExtractedMetadata, baseUrl: string): void {
-  // Check for suspicious title length
-  if (metadata.title && typeof metadata.title === 'string' && metadata.title.length > 70) {
-    metadata.warnings.push({
-      tag: 'title',
-      type: 'suspicious_length',
-      message: 'HTML title is longer than 70 characters. Search engines may truncate it.',
-      severity: 'warning',
-      suggestion: 'Keep your title between 50-60 characters for optimal display.',
-    });
+function detectWarnings(metadata: ExtractedMetadata): void {
+  // Check for empty tags
+  for (const tag of metadata.rawMetaTags) {
+    if (!tag.content || tag.content.trim() === '') {
+      metadata.emptyTags.push(`${tag.name || tag.property || tag.httpEquiv}`);
+    }
   }
 
-  // Check for suspicious description length
-  if (metadata.description && typeof metadata.description === 'string' && metadata.description.length > 320) {
+  // Check OG image
+  if (metadata.ogImage) {
+    try {
+      const imgUrl = new URL(metadata.ogImage, metadata.ogUrl || '');
+      if (!imgUrl.hostname.includes('.')) {
+        metadata.warnings.push({
+          tag: 'og:image',
+          type: 'suspicious_length',
+          message: 'OG image URL appears to be relative or invalid',
+          severity: 'warning',
+          suggestion: 'Use an absolute URL for og:image',
+        });
+      }
+    } catch {
+      metadata.warnings.push({
+        tag: 'og:image',
+        type: 'invalid',
+        message: 'OG image URL is malformed',
+        severity: 'error',
+        suggestion: 'Fix the og:image URL format',
+      });
+    }
+  }
+
+  // Check description length
+  if (metadata.description && metadata.description.length < 50) {
     metadata.warnings.push({
       tag: 'description',
       type: 'suspicious_length',
-      message: 'Meta description is longer than 320 characters. Search engines may truncate it.',
+      message: 'Meta description is shorter than 50 characters',
       severity: 'warning',
-      suggestion: 'Keep your description between 150-160 characters for optimal display.',
+      suggestion: 'Aim for 150-160 characters for optimal SEO',
     });
   }
 
-  // Check for OG title length
-  if (metadata.ogTitle && typeof metadata.ogTitle === 'string' && metadata.ogTitle.length > 95) {
+  if (metadata.description && metadata.description.length > 160) {
     metadata.warnings.push({
-      tag: 'og:title',
+      tag: 'description',
       type: 'suspicious_length',
-      message: 'Open Graph title is longer than 95 characters. Social platforms may truncate it.',
+      message: 'Meta description is longer than 160 characters',
       severity: 'warning',
-      suggestion: 'Keep OG title under 60 characters for best display across platforms.',
+      suggestion: 'Consider shortening to 150-160 characters',
     });
   }
 
-  // Check for OG description length
-  if (metadata.ogDescription && typeof metadata.ogDescription === 'string' && metadata.ogDescription.length > 300) {
+  // Check title length
+  if (metadata.title && metadata.title.length < 30) {
     metadata.warnings.push({
-      tag: 'og:description',
+      tag: 'title',
       type: 'suspicious_length',
-      message: 'Open Graph description is longer than 300 characters. Social platforms may truncate it.',
+      message: 'Page title is shorter than 30 characters',
       severity: 'warning',
-      suggestion: 'Keep OG description under 160 characters for best display.',
+      suggestion: 'Aim for 50-60 characters for optimal SEO',
     });
   }
 
-  // Check for conflicting titles
-  if (metadata.title && metadata.ogTitle && metadata.title !== metadata.ogTitle) {
+  if (metadata.title && metadata.title.length > 70) {
     metadata.warnings.push({
-      tag: 'title/og:title',
-      type: 'conflict',
-      message: 'HTML title and Open Graph title are different.',
-      severity: 'info',
-      suggestion: 'Consider using the same title for consistency across platforms.',
-    });
-  }
-
-  // Check for conflicting descriptions
-  if (metadata.description && metadata.ogDescription && metadata.description !== metadata.ogDescription) {
-    metadata.warnings.push({
-      tag: 'description/og:description',
-      type: 'conflict',
-      message: 'Meta description and Open Graph description are different.',
-      severity: 'info',
-      suggestion: 'Consider using the same description for consistency across platforms.',
-    });
-  }
-
-  // Check for missing Twitter Card
-  if (!metadata.twitterCard && metadata.ogImage) {
-    metadata.warnings.push({
-      tag: 'twitter:card',
-      type: 'missing',
-      message: 'No Twitter Card type specified. X may not display your content optimally.',
-      severity: 'info',
-      suggestion: 'Add twitter:card with value "summary_large_image" for best display on X.',
+      tag: 'title',
+      type: 'suspicious_length',
+      message: 'Page title is longer than 70 characters',
+      severity: 'warning',
+      suggestion: 'Consider shortening to 50-60 characters',
     });
   }
 }
 
-function resolveRelativeUrls(metadata: ExtractedMetadata, baseUrl: string): void {
-  const pairs: Array<{ get: () => string | undefined; set: (v: string) => void }> = [
-    { get: () => metadata.ogImage, set: (v) => { metadata.ogImage = v; } },
-    { get: () => metadata.ogImageSecureUrl, set: (v) => { metadata.ogImageSecureUrl = v; } },
-    { get: () => metadata.ogUrl, set: (v) => { metadata.ogUrl = v; } },
-    { get: () => metadata.canonical, set: (v) => { metadata.canonical = v; } },
-    { get: () => metadata.twitterImage, set: (v) => { metadata.twitterImage = v; } },
-  ];
-
-  pairs.forEach(({ get, set }) => {
-    const value = get();
-    if (value && typeof value === 'string') {
-      const resolved = resolveRelativeUrl(value, baseUrl);
-      if (resolved) {
-        set(resolved);
-      }
-    }
-  });
-}
+export { detectDuplicates, detectMissingRequired, detectWarnings };
