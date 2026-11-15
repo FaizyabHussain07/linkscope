@@ -1,58 +1,44 @@
-import { cn } from "@/lib/utils";
-import { PreviewProps } from "./types";
-import { useState } from "react";
-import { ImageOff } from "lucide-react";
-import { getUrlHostname } from "@/lib/utils";
+import { ExtractedMetadata } from '@/types';
+import { cn } from '@/lib/utils';
 
-export function WhatsAppPreview({ metadata, url }: PreviewProps) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
+interface WhatsAppPreviewProps {
+  metadata: ExtractedMetadata;
+  url: string;
+  className?: string;
+}
 
-  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url;
-  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription;
-  const image = metadata.ogImage || metadata.twitterImage;
-  const siteName = metadata.ogSiteName || getUrlHostname(url);
-
+export function WhatsAppPreview({ metadata, url, className }: WhatsAppPreviewProps) {
+  const siteName = metadata.ogSiteName || new URL(url).hostname;
+  
   return (
-    <div className="border border-[#dcdcdc] rounded-[2px] overflow-hidden bg-[#f5f5f5] max-w-md">
-      {image && !imageError ? (
-        <div className="relative aspect-[1.91/1] bg-[#e9e9e9] overflow-hidden">
-          {imageLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#e9e9e9]">
-              <div className="w-8 h-8 border-2 border-[#25d366]/30 border-t-[#25d366] rounded-full animate-spin" />
-            </div>
-          )}
+    <div className={cn('flex gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm', className)}>
+      {metadata.ogImage && (
+        <div className="mr-3 overflow-hidden rounded border border-gray-200 bg-gray-100" style={{ aspectRatio: '1.91/1', width: '120px' }}>
           <img
-            src={image}
-            alt={title}
-            className={cn(
-              "w-full h-full object-cover transition-opacity duration-300",
-              imageLoading ? "opacity-0" : "opacity-100"
-            )}
-            onLoad={() => setImageLoading(false)}
-            onError={() => {
-              setImageError(true);
-              setImageLoading(false);
-            }}
+            src={metadata.ogImage}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
           />
         </div>
-      ) : (
-        <div className="aspect-[1.91/1] bg-[#e9e9e9] flex items-center justify-center">
-          <ImageOff className="w-8 h-8 text-[#667781]" />
-        </div>
       )}
-      <div className="p-3 space-y-1">
-        <p className="text-[#667781] text-[12.5px] uppercase truncate">
-          {siteName}
+      
+      <div className="flex-1 min-w-0">
+        <div className="mb-1">
+          <span className="text-xs font-bold text-gray-900">{siteName}</span>
+        </div>
+        
+        <h3 className="line-clamp-2 font-semibold text-[15px] leading-snug text-gray-900">
+          {metadata.ogTitle || metadata.title || 'No title available'}
+        </h3>
+        
+        <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-gray-700">
+          {metadata.ogDescription || metadata.description || 'No description available'}
         </p>
-        <p className="text-[#3b4c54] font-medium text-[14px] line-clamp-2 leading-snug">
-          {title}
-        </p>
-        {description && (
-          <p className="text-[#667781] text-[14px] line-clamp-2 leading-relaxed">
-            {description}
-          </p>
-        )}
+        
+        <div className="mt-1 text-[12px] text-gray-500">
+          {new URL(url).hostname}
+        </div>
       </div>
     </div>
   );
