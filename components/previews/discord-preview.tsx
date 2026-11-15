@@ -1,60 +1,44 @@
-import { cn } from "@/lib/utils";
-import { PreviewProps } from "./types";
-import { useState } from "react";
-import { ImageOff } from "lucide-react";
-import { getUrlHostname } from "@/lib/utils";
+import { ExtractedMetadata } from '@/types';
+import { cn } from '@/lib/utils';
 
-export function DiscordPreview({ metadata, url }: PreviewProps) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
+interface DiscordPreviewProps {
+  metadata: ExtractedMetadata;
+  url: string;
+  className?: string;
+}
 
-  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url;
-  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription;
-  const image = metadata.ogImage || metadata.twitterImage;
-  const siteName = metadata.ogSiteName || getUrlHostname(url);
-
+export function DiscordPreview({ metadata, url, className }: DiscordPreviewProps) {
+  const siteName = metadata.ogSiteName || new URL(url).hostname;
+  
   return (
-    <div className="border border-[#313338] rounded-lg overflow-hidden bg-[#2b2b2b] max-w-md">
-      <div className="p-3 space-y-1">
-        <div className="flex items-center gap-2">
-          {image && !imageError ? (
-            <div className="relative w-6 h-6 rounded bg-[#313338] overflow-hidden shrink-0">
-              {imageLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-[#313338]">
-                  <div className="w-3 h-3 border border-[#5865f2]/30 border-t-[#5865f2] rounded-full animate-spin" />
-                </div>
-              )}
-              <img
-                src={image}
-                alt={title}
-                className={cn(
-                  "w-full h-full object-cover transition-opacity duration-300",
-                  imageLoading ? "opacity-0" : "opacity-100"
-                )}
-                onLoad={() => setImageLoading(false)}
-                onError={() => {
-                  setImageError(true);
-                  setImageLoading(false);
-                }}
-              />
-            </div>
-          ) : (
-            <div className="w-6 h-6 rounded bg-[#313338] flex items-center justify-center shrink-0">
-              <ImageOff className="w-3 h-3 text-[#949ba4]" />
-            </div>
-          )}
-          <p className="text-[#949ba4] text-xs truncate">
-            {siteName}
-          </p>
+    <div className={cn('flex gap-3 rounded-lg border border-gray-300 bg-white p-3 shadow-sm', className)}>
+      {metadata.ogImage && (
+        <div className="mr-3 overflow-hidden rounded border border-gray-300 bg-gray-100" style={{ aspectRatio: '1.91/1', width: '120px' }}>
+          <img
+            src={metadata.ogImage}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         </div>
-        <p className="text-[#00a8fc] font-medium text-sm line-clamp-1 hover:underline cursor-pointer">
-          {title}
+      )}
+      
+      <div className="flex-1 min-w-0">
+        <div className="mb-1">
+          <span className="text-xs font-bold text-gray-900">{siteName}</span>
+        </div>
+        
+        <h3 className="line-clamp-2 font-semibold text-[15px] leading-snug text-gray-900">
+          {metadata.ogTitle || metadata.title || 'No title available'}
+        </h3>
+        
+        <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-gray-600">
+          {metadata.ogDescription || metadata.description || 'No description available'}
         </p>
-        {description && (
-          <p className="text-[#b5bac1] text-xs line-clamp-2 leading-relaxed">
-            {description}
-          </p>
-        )}
+        
+        <div className="mt-1 text-[12px] text-gray-500">
+          {new URL(url).hostname}
+        </div>
       </div>
     </div>
   );
