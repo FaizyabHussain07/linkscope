@@ -1,8 +1,9 @@
 import Link from "next/link"
-import { ArrowRight, Check, ExternalLink, Star, Zap, Shield, Code, Download, Globe, MessageCircle, Twitter, Linkedin, Users, MessageSquare, Hash } from "lucide-react"
+import { ArrowRight, Check, ExternalLink, Star, Zap, Shield, Code, Download, Globe, MessageCircle, Twitter, Linkedin, Users, MessageSquare, Hash, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { HeroInspector } from "./components/landing/hero-inspector"
 
 const FEATURES = [
   {
@@ -54,13 +55,15 @@ export default function LandingPage() {
       <header className="border-b border-[#27272A] bg-[#09090B]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] shadow-lg shadow-[#6366F1]/20">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-white">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="text-lg font-semibold tracking-tight">LinkScope</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] shadow-lg shadow-[#6366F1]/20">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-white">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span className="text-lg font-semibold tracking-tight">LinkScope</span>
+            </Link>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <Link href="#features" className="text-sm text-[#A1A1AA] transition-colors hover:text-white">Features</Link>
@@ -148,6 +151,14 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Interactive Hero Inspector */}
+      <section className="border-t border-[#27272A] bg-[#0a0a0f]">
+        <div className="mx-auto max-w-2xl px-4 py-12">
+          <p className="text-center text-sm font-medium text-[#A1A1AA] mb-6">Try it now — paste any URL above</p>
+          <HeroInspector />
+        </div>
+      </section>
+
       {/* Platform Previews Section */}
       <section id="platforms" className="border-t border-[#27272A] bg-[#0a0a0f]">
         <div className="mx-auto max-w-7xl px-4 py-24">
@@ -159,8 +170,9 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
             {PLATFORMS.map((platform) => (
-              <div
+              <Link
                 key={platform.name}
+                href="/inspect"
                 className="group flex flex-col items-center gap-4 rounded-2xl border border-[#27272A] bg-[#111113] p-6 transition-all duration-300 hover:border-[#3F3F46] hover:bg-[#18181B]"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: `${platform.color}20` }}>
@@ -169,7 +181,7 @@ export default function LandingPage() {
                 <span className="text-sm font-medium text-[#A1A1AA] group-hover:text-white transition-colors">
                   {platform.name}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -248,8 +260,8 @@ export default function LandingPage() {
           <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
             {[
               { icon: Shield, title: "SSRF Protection", desc: "All URLs validated against private IP ranges, localhost, and cloud metadata endpoints." },
-              { icon: Zap, title: "Request Limits", desc: "Timeout, size, and redirect limits prevent abuse and ensure fast responses." },
-              { icon: Download, title: "No Data Persistence", desc: "We don't store your URLs, HTML, or results. Everything is processed and discarded." },
+              { icon: Download, title: "Request Limits", desc: "Timeout, size, and redirect limits prevent abuse and ensure fast responses." },
+              { icon: Smartphone, title: "No Data Persistence", desc: "We don't store your URLs, HTML, or results. Everything is processed and discarded." },
               { icon: Globe, title: "Self-Hostable", desc: "Deploy your own instance with zero dependencies. No database required." },
             ].map((item, idx) => (
               <Card
