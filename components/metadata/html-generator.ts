@@ -96,15 +96,17 @@ export function generateHtmlMetaTags(metadata: MetaData): string {
     tags.push(`  <meta name="twitter:creator" content="${escapeHtml(metadata.twitterCreator)}">`)
   }
 
-  Object.keys(metadata).forEach((key) => {
-    if (key.startsWith("meta_") && metadata[key]) {
+  const metadataRecord = metadata as unknown as Record<string, unknown>
+  Object.keys(metadataRecord).forEach((key) => {
+    const value = metadataRecord[key]
+    if (key.startsWith("meta_") && typeof value === "string" && value) {
       const metaName = key.replace("meta_", "").replace(/_/g, ":")
-      tags.push(`  <meta name="${escapeHtml(metaName)}" content="${escapeHtml(metadata[key]!)}">`)
+      tags.push(`  <meta name="${escapeHtml(metaName)}" content="${escapeHtml(value)}">`)
     }
 
-    if (key.startsWith("link_") && metadata[key]) {
+    if (key.startsWith("link_") && typeof value === "string" && value) {
       const linkRel = key.replace("link_", "").replace(/_/g, ":")
-      tags.push(`  <link rel="${escapeHtml(linkRel)}" href="${escapeHtml(metadata[key]!)}">`)
+      tags.push(`  <link rel="${escapeHtml(linkRel)}" href="${escapeHtml(value)}">`)
     }
   })
 

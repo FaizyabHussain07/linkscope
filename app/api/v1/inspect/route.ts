@@ -59,8 +59,7 @@ export async function POST(request: NextRequest) {
     const cacheKey = `ratelimit:${ip}`;
     
     // Simple in-memory rate limiting (for production, use Redis)
-    const runtime = await getRuntime();
-    const timestamps = await runtime?.kv.get(cacheKey) || [];
+    const timestamps = rateLimitStore.get(cacheKey) || [];
     const now = Date.now();
     const recentRequests = timestamps.filter((t: number) => now - t < 60000);
     
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
     
     recentRequests.push(now);
-    await runtime?.kv.set(cacheKey, recentRequests);
+    rateLimitStore.set(cacheKey, recentRequests);
 
     // Parse and validate request body
     const body = await request.json().catch(() => null);
@@ -106,6 +105,7 @@ export async function POST(request: NextRequest) {
       maxRedirects: SECURITY_CONFIG.maxRedirects,
       maxSizeBytes: SECURITY_CONFIG.maxSizeBytes,
       connectTimeoutMs: SECURITY_CONFIG.connectTimeoutMs,
+      blockedHosts: SECURITY_CONFIG.blockedHosts,
       userAgent: `LinkScope/1.0 (+${process.env.NEXT_PUBLIC_SITE_URL || 'https://linkscope.faizyab.me'})`,
     });
 
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract metadata from HTML
-    const metadata = extractMetadata(fetchResult.content, url);
+    const metadata = extractMetadata(fetchResult.content, fetchResult.finalUrl);
 
     // Perform audit and calculate score
     const audit = performAudit(metadata);
@@ -150,14 +150,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper to get runtime for caching
-async function getRuntime() {
-  try {
-    if (typeof process !== 'undefined' && process.env.VERCEL) {
-      return await import('@vercel/kv');
-    }
-  } catch {
-    // KV not available
-  }
-  return null;
-}
+const rateLimitStore = new Map<string, number[]>();

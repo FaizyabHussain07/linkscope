@@ -2,47 +2,9 @@
 
 import { useCallback, useState } from "react";
 import { formatUrl } from "@/lib/cache";
+import type { ExtractedMetadata } from "@/types";
 
-export interface MetaData {
-  title?: string;
-  description?: string;
-  ogTitle?: string;
-  ogDescription?: string;
-  ogImage?: string;
-  ogType?: string;
-  ogUrl?: string;
-  ogSiteName?: string;
-  ogLocale?: string;
-  twitterCard?: string;
-  twitterTitle?: string;
-  twitterDescription?: string;
-  twitterImage?: string;
-  twitterSite?: string;
-  twitterCreator?: string;
-  canonical?: string;
-  favicon?: string;
-  language?: string;
-  charset?: string;
-  viewport?: string;
-  robots?: string;
-  generator?: string;
-  themeColor?: string;
-  alternate?: string;
-  author?: string;
-  prev?: string;
-  next?: string;
-  search?: string;
-  icon?: string;
-  mobileApp?: string;
-  mobileAppUrl?: string;
-  appleItunesApp?: string;
-  appleMobileWebAppCapable?: string;
-  appleMobileWebAppTitle?: string;
-  formatDetection?: string;
-  robotsFile?: string;
-  sitemap?: string;
-  [key: string]: string | undefined;
-}
+export type MetaData = ExtractedMetadata;
 
 export function useMetadata() {
   const [url, setUrl] = useState("");

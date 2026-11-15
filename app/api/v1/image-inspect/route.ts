@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { secureFetch } from '@/lib/security';
 import { extractMetadata } from '@/lib/extractors';
+import { SECURITY_CONFIG } from '@/config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,9 +17,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch the URL
     const fetchResult = await secureFetch(url, {
-      timeoutMs: 15000,
-      maxRedirects: 5,
-      maxSizeBytes: 10 * 1024 * 1024,
+      ...SECURITY_CONFIG,
       allowedContentTypes: [
         'text/html',
         'text/plain',

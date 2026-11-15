@@ -47,7 +47,7 @@ const CATEGORY_WEIGHTS: Record<string, { total: number; checks: Array<{ id: stri
   },
 };
 
-export function performAudit(metadata: ExtractedMetadata): Omit<AuditResult, 'score'> {
+export function performAudit(metadata: ExtractedMetadata): AuditResult {
   const findings: AuditFinding[] = [];
   const passed: AuditCheck[] = [];
   const failed: AuditCheck[] = [];
@@ -136,7 +136,7 @@ export function performAudit(metadata: ExtractedMetadata): Omit<AuditResult, 'sc
   };
 }
 
-export function calculateScore(audit: Omit<AuditResult, 'score'>): number {
+export function calculateScore(audit: AuditResult): number {
   let totalScore = 0;
   let totalMax = 0;
 
@@ -146,6 +146,19 @@ export function calculateScore(audit: Omit<AuditResult, 'score'>): number {
   }
 
   return totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
+}
+
+export function getScoreBreakdown(audit: AuditResult) {
+  return {
+    categories: audit.categoryScores.map((category) => ({
+      name: category.name,
+      score: category.score,
+      maxScore: category.maxScore,
+      percentage: category.maxScore > 0
+        ? Math.round((category.score / category.maxScore) * 100)
+        : 0,
+    })),
+  };
 }
 
 function getAffectedTags(category: string, checkId: string): string[] {

@@ -1,5 +1,6 @@
 import { ExtractedMetadata } from '@/types';
 import { Check, AlertTriangle, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface BasicMetadataProps {
   metadata: ExtractedMetadata;
@@ -11,6 +12,10 @@ export function BasicMetadata({ metadata }: BasicMetadataProps) {
     if (typeof value === 'string' && value.trim() === '') return { icon: AlertTriangle, color: 'text-yellow-500', label: 'Empty' };
     return { icon: Check, color: 'text-green-500', label: 'Present' };
   };
+  const StatusIcon = ({ value }: { value?: string | number | null }) => {
+    const { icon: Icon, color } = getStatus(value);
+    return <Icon className={cn('w-4 h-4', color)} />;
+  };
 
   return (
     <div className="space-y-6">
@@ -21,9 +26,7 @@ export function BasicMetadata({ metadata }: BasicMetadataProps) {
           <label className="text-sm font-medium">Page Title</label>
           <div className="flex items-start gap-2">
             <div className="mt-0.5">
-              {({ icon: Icon, color, label }) => (
-                <Icon className={cn('w-4 h-4', color)} />
-              )}
+              <StatusIcon value={metadata.title} />
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground font-mono break-all">
@@ -38,9 +41,7 @@ export function BasicMetadata({ metadata }: BasicMetadataProps) {
           <label className="text-sm font-medium">Meta Description</label>
           <div className="flex items-start gap-2">
             <div className="mt-0.5">
-              {({ icon: Icon, color, label }) => (
-                <Icon className={cn('w-4 h-4', color)} />
-              )}
+              <StatusIcon value={metadata.description} />
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground font-mono break-all">
@@ -55,9 +56,7 @@ export function BasicMetadata({ metadata }: BasicMetadataProps) {
           <label className="text-sm font-medium">Canonical URL</label>
           <div className="flex items-start gap-2">
             <div className="mt-0.5">
-              {({ icon: Icon, color, label }) => (
-                <Icon className={cn('w-4 h-4', color)} />
-              )}
+              <StatusIcon value={metadata.canonical} />
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground font-mono break-all">
@@ -72,9 +71,7 @@ export function BasicMetadata({ metadata }: BasicMetadataProps) {
           <label className="text-sm font-medium">Language</label>
           <div className="flex items-start gap-2">
             <div className="mt-0.5">
-              {({ icon: Icon, color, label }) => (
-                <Icon className={cn('w-4 h-4', color)} />
-              )}
+              <StatusIcon value={metadata.language} />
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground font-mono">
@@ -89,9 +86,7 @@ export function BasicMetadata({ metadata }: BasicMetadataProps) {
           <label className="text-sm font-medium">Viewport</label>
           <div className="flex items-start gap-2">
             <div className="mt-0.5">
-              {({ icon: Icon, color, label }) => (
-                <Icon className={cn('w-4 h-4', color)} />
-              )}
+              <StatusIcon value={metadata.viewport} />
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground font-mono break-all">
@@ -106,9 +101,7 @@ export function BasicMetadata({ metadata }: BasicMetadataProps) {
           <label className="text-sm font-medium">Charset</label>
           <div className="flex items-start gap-2">
             <div className="mt-0.5">
-              {({ icon: Icon, color, label }) => (
-                <Icon className={cn('w-4 h-4', color)} />
-              )}
+              <StatusIcon value={metadata.charset} />
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground font-mono">

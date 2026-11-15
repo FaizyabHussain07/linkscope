@@ -58,9 +58,9 @@ export function extractMetadata(html: string, baseUrl: string): ExtractedMetadat
   // Extract Open Graph tags
   metadata.ogTitle = getMetaContent($, 'property', 'og:title');
   metadata.ogDescription = getMetaContent($, 'property', 'og:description');
-  metadata.ogImage = getMetaContent($, 'property', 'og:image');
-  metadata.ogImageSecureUrl = getMetaContent($, 'property', 'og:image:secure_url');
-  metadata.ogUrl = getMetaContent($, 'property', 'og:url');
+  metadata.ogImage = resolveMetadataUrl(getMetaContent($, 'property', 'og:image'), baseUrl);
+  metadata.ogImageSecureUrl = resolveMetadataUrl(getMetaContent($, 'property', 'og:image:secure_url'), baseUrl);
+  metadata.ogUrl = resolveMetadataUrl(getMetaContent($, 'property', 'og:url'), baseUrl);
   metadata.ogType = getMetaContent($, 'property', 'og:type');
   metadata.ogSiteName = getMetaContent($, 'property', 'og:site_name');
   metadata.ogLocale = getMetaContent($, 'property', 'og:locale');
@@ -78,14 +78,14 @@ export function extractMetadata(html: string, baseUrl: string): ExtractedMetadat
   metadata.twitterCard = getMetaContent($, 'name', 'twitter:card');
   metadata.twitterTitle = getMetaContent($, 'name', 'twitter:title');
   metadata.twitterDescription = getMetaContent($, 'name', 'twitter:description');
-  metadata.twitterImage = getMetaContent($, 'name', 'twitter:image');
+  metadata.twitterImage = resolveMetadataUrl(getMetaContent($, 'name', 'twitter:image'), baseUrl);
   metadata.twitterImageAlt = getMetaContent($, 'name', 'twitter:image:alt');
   metadata.twitterSite = getMetaContent($, 'name', 'twitter:site');
   metadata.twitterCreator = getMetaContent($, 'name', 'twitter:creator');
 
   // Extract SEO tags
   metadata.description = getMetaContent($, 'name', 'description');
-  metadata.canonical = getLinkHref($, 'rel', 'canonical');
+  metadata.canonical = resolveMetadataUrl(getLinkHref($, 'rel', 'canonical'), baseUrl);
   metadata.language = $('html').attr('lang') || $('html').attr('xml:lang');
   metadata.charset = $('meta[http-equiv="Content-Type"]').attr('content')?.match(/charset=([^;]+)/)?.[1];
   metadata.viewport = getMetaContent($, 'name', 'viewport');
@@ -95,15 +95,15 @@ export function extractMetadata(html: string, baseUrl: string): ExtractedMetadat
 
   // Extract favicon
   const favicon = getLinkHref($, 'rel', /^(icon|shortcut icon|x-icon)$/i);
-  if (favicon) metadata.favicon = favicon;
+  if (favicon) metadata.favicon = resolveMetadataUrl(favicon, baseUrl);
 
   // Extract alternate links
-  metadata.alternate = getLinkHref($, 'rel', 'alternate');
+  metadata.alternate = resolveMetadataUrl(getLinkHref($, 'rel', 'alternate'), baseUrl);
   metadata.author = getMetaContent($, 'name', 'author');
-  metadata.prev = getLinkHref($, 'rel', 'prev');
-  metadata.next = getLinkHref($, 'rel', 'next');
-  metadata.search = getLinkHref($, 'rel', 'search');
-  metadata.icon = getLinkHref($, 'rel', 'icon');
+  metadata.prev = resolveMetadataUrl(getLinkHref($, 'rel', 'prev'), baseUrl);
+  metadata.next = resolveMetadataUrl(getLinkHref($, 'rel', 'next'), baseUrl);
+  metadata.search = resolveMetadataUrl(getLinkHref($, 'rel', 'search'), baseUrl);
+  metadata.icon = resolveMetadataUrl(getLinkHref($, 'rel', 'icon'), baseUrl);
 
   // Extract robots.txt and sitemap
   try {
@@ -124,6 +124,11 @@ export function extractMetadata(html: string, baseUrl: string): ExtractedMetadat
 function getMetaContent($: cheerio.CheerioAPI, attrName: string, attrValue: string): string | undefined {
   const elem = $(`meta[${attrName}="${attrValue}"]`).first();
   return elem.attr('content') || undefined;
+}
+
+function resolveMetadataUrl(value: string | undefined, baseUrl: string): string | undefined {
+  if (!value) return undefined;
+  return resolveRelativeUrl(value.trim(), baseUrl);
 }
 
 function getLinkHref($: cheerio.CheerioAPI, attrName: string, attrValue: string | RegExp): string | undefined {
@@ -191,7 +196,7 @@ function detectWarnings(metadata: ExtractedMetadata): void {
         tag: 'og:image',
         type: 'invalid',
         message: 'OG image URL is malformed',
-        severity: 'error',
+        severity: 'critical',
         suggestion: 'Fix the og:image URL format',
       });
     }

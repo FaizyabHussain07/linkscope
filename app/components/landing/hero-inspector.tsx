@@ -16,26 +16,43 @@ const PLATFORMS = [
   { id: "linkedin", label: "LinkedIn", icon: "L", color: "#0A66C2" },
 ]
 
-const DEMO_META = {
-  title: "Build faster with modern tools",
-  description: "Discover the best developer tools and platforms to accelerate your workflow and ship faster.",
-  ogImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop",
-  siteName: "example.com",
+type PreviewMetadata = {
+  title?: string
+  description?: string
+  ogTitle?: string
+  ogDescription?: string
+  ogImage?: string
+  ogSiteName?: string
 }
 
 export function HeroInspector() {
   const [url, setUrl] = useState("https://example.com")
   const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState("")
+  const [metadata, setMetadata] = useState<PreviewMetadata | null>(null)
   const [platform, setPlatform] = useState("telegram")
 
   const handleInspect = async () => {
     if (!url.trim()) return
     setLoading(true)
-    setSubmitted(false)
-    await new Promise((r) => setTimeout(r, 800))
-    setLoading(false)
-    setSubmitted(true)
+    setError("")
+    setMetadata(null)
+    try {
+      const response = await fetch("/api/v1/inspect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url.trim() }),
+      })
+      const result = await response.json() as { success?: boolean; error?: string; metadata?: PreviewMetadata }
+      if (!response.ok || !result.success || !result.metadata) {
+        throw new Error(result.error || "Inspection failed")
+      }
+      setMetadata(result.metadata)
+    } catch (inspectionError) {
+      setError(inspectionError instanceof Error ? inspectionError.message : "Inspection failed")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const platformData = PLATFORMS.find((p) => p.id === platform)
@@ -101,29 +118,34 @@ export function HeroInspector() {
       </Tabs>
 
       <div className="mt-4 space-y-4">
-        {!submitted ? (
+        {loading ? (
           <div className="space-y-3">
             <div className="h-5 w-3/4 animate-pulse rounded-md bg-[#18181B]" />
             <div className="h-4 w-1/2 animate-pulse rounded-md bg-[#18181B]" />
           </div>
-        ) : (
+        ) : error ? (
+          <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : metadata ? (
           <>
             <p className="text-[10px] uppercase tracking-wider text-[#A1A1AA]">
               {platformData?.color && (
                 <span className="inline-block h-2 w-2 rounded-full mr-1.5 align-middle" style={{ backgroundColor: platformData.color }} />
               )}
-              {DEMO_META.siteName}
+              {metadata.ogSiteName || (() => { try { return new URL(url).hostname } catch { return url } })()}
             </p>
             <h3 className="text-base font-semibold text-white line-clamp-2 mt-1">
-              {DEMO_META.title}
+              {metadata.ogTitle || metadata.title || "No title available"}
             </h3>
             <p className="text-sm text-[#A1A1AA] line-clamp-2 mt-1">
-              {DEMO_META.description}
+              {metadata.ogDescription || metadata.description || "No description available"}
             </p>
 
-            {DEMO_META.ogImage && (
+            {metadata.ogImage && (
               <div className="mt-4 relative aspect-[1.91/1] overflow-hidden rounded-lg border border-[#27272A]">
-                <img src={DEMO_META.ogImage} alt="" className="h-full w-full object-cover" />
+                <img src={metadata.ogImage} alt="" className="h-full w-full object-cover" />
               </div>
             )}
 
@@ -159,6 +181,8 @@ export function HeroInspector() {
               <span className="text-xs text-[#A1A1AA]">out of 100</span>
             </div>
           </>
+        ) : (
+          <p className="text-sm text-[#71717A]">Inspect a public URL to see its extracted preview.</p>
         )}
       </div>
 

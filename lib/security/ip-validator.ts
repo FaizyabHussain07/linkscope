@@ -109,7 +109,9 @@ function isIpv4Blocked(ip: string): boolean {
     const networkInt = ipv4ToInteger(range.network);
     if (networkInt === null) continue;
 
-    const mask = ~(0xffffffff >>> (32 - range.bits)) >>> 0;
+    const mask = range.bits === 32
+      ? 0xffffffff
+      : ~(0xffffffff >>> (32 - range.bits)) >>> 0;
     if ((ipInt & mask) === (networkInt & mask)) {
       return true;
     }

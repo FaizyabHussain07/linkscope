@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { secureFetch } from '@/lib/security';
 import { extractMetadata } from '@/lib/extractors';
+import { SECURITY_CONFIG } from '@/config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,8 +18,8 @@ export async function POST(request: NextRequest) {
 
     // Fetch both URLs
     const [result1, result2] = await Promise.all([
-      secureFetch(url1, { timeoutMs: 15000, maxRedirects: 5 }),
-      secureFetch(url2, { timeoutMs: 15000, maxRedirects: 5 }),
+      secureFetch(url1, SECURITY_CONFIG),
+      secureFetch(url2, SECURITY_CONFIG),
     ]);
 
     if (!result1.success || !result2.success) {
@@ -33,8 +34,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract metadata from both
-    const metadata1 = extractMetadata(result1.content, url1);
-    const metadata2 = extractMetadata(result2.content, url2);
+    const metadata1 = extractMetadata(result1.content, result1.finalUrl);
+    const metadata2 = extractMetadata(result2.content, result2.finalUrl);
 
     // Compare key fields
     const comparison = {
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
       summary: {
         totalFields: fieldsCompared.length,
         differentFields: fieldsDifferent,
-        similarity: Math.round(((fieldsCompared - fieldsDifferent) / fieldsCompared) * 100),
+        similarity: Math.round(((fieldsCompared.length - fieldsDifferent) / fieldsCompared.length) * 100),
       },
       fetchedAt: new Date().toISOString(),
     });

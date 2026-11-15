@@ -12,6 +12,10 @@ export function ImagesMetadata({ metadata }: ImagesMetadataProps) {
     if (typeof value === 'string' && value.trim() === '') return { icon: AlertTriangle, color: 'text-yellow-500', label: 'Empty' };
     return { icon: Check, color: 'text-green-500', label: 'Present' };
   };
+  const StatusIcon = ({ value }: { value?: string | number | null }) => {
+    const { icon: Icon, color } = getStatus(value);
+    return <Icon className={cn('w-4 h-4', color)} />;
+  };
 
   const imageFields = [
     { label: 'OG Image', value: metadata.ogImage, isUrl: true },
@@ -22,10 +26,11 @@ export function ImagesMetadata({ metadata }: ImagesMetadataProps) {
     { label: 'Twitter Image Alt', value: metadata.twitterImageAlt },
   ];
 
-  const hasDimensions = metadata.ogImageWidth && metadata.ogImageHeight;
-  const isValidSize = hasDimensions && 
-    metadata.ogImageWidth >= 1200 && 
-    metadata.ogImageHeight >= 630;
+  const imageWidth = metadata.ogImageWidth;
+  const imageHeight = metadata.ogImageHeight;
+  const hasDimensions = typeof imageWidth === 'number' &&
+    typeof imageHeight === 'number';
+  const isValidSize = hasDimensions && imageWidth >= 1200 && imageHeight >= 630;
 
   return (
     <div className="space-y-6">
@@ -61,9 +66,7 @@ export function ImagesMetadata({ metadata }: ImagesMetadataProps) {
             <label className="text-sm font-medium">{field.label}</label>
             <div className="flex items-start gap-2">
               <div className="mt-0.5">
-                {({ icon: Icon, color, label }) => (
-                  <Icon className={cn('w-4 h-4', color)} />
-                )}
+                <StatusIcon value={field.value as string | number | undefined} />
               </div>
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground font-mono break-all">

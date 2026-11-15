@@ -12,6 +12,10 @@ export function OpenGraphMetadata({ metadata }: OpenGraphMetadataProps) {
     if (typeof value === 'string' && value.trim() === '') return { icon: AlertTriangle, color: 'text-yellow-500', label: 'Empty' };
     return { icon: Check, color: 'text-green-500', label: 'Present' };
   };
+  const StatusIcon = ({ value }: { value?: string | number | null }) => {
+    const { icon: Icon, color } = getStatus(value);
+    return <Icon className={cn('w-4 h-4', color)} />;
+  };
 
   const fields = [
     { label: 'OG Title', value: metadata.ogTitle },
@@ -41,9 +45,7 @@ export function OpenGraphMetadata({ metadata }: OpenGraphMetadataProps) {
             <label className="text-sm font-medium">{field.label}</label>
             <div className="flex items-start gap-2">
               <div className="mt-0.5">
-                {({ icon: Icon, color, label }) => (
-                  <Icon className={cn('w-4 h-4', color)} />
-                )}
+                <StatusIcon value={field.value as string | number | undefined} />
               </div>
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground font-mono break-all">
