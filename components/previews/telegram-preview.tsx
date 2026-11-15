@@ -1,57 +1,46 @@
-import { cn } from "@/lib/utils";
-import { PreviewProps } from "./types";
-import { useState } from "react";
-import { ImageOff } from "lucide-react";
-import { getUrlHostname } from "@/lib/utils";
+import { ExtractedMetadata } from '@/types';
+import { cn } from '@/lib/utils';
 
-export function TelegramPreview({ metadata, url }: PreviewProps) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
+interface TelegramPreviewProps {
+  metadata: ExtractedMetadata;
+  url: string;
+  className?: string;
+}
 
-  const title = metadata.ogTitle || metadata.title || metadata.twitterTitle || url;
-  const description = metadata.ogDescription || metadata.description || metadata.twitterDescription;
-  const image = metadata.ogImage || metadata.twitterImage;
-
+export function TelegramPreview({ metadata, url, className }: TelegramPreviewProps) {
+  const siteName = metadata.ogSiteName || new URL(url).hostname;
+  
   return (
-    <div className="border border-[#e8e8e8] dark:border-[#2e2e2e] rounded-lg overflow-hidden bg-[#ffffff] dark:bg-[#1c1c1c] max-w-md">
-      {image && !imageError ? (
-        <div className="relative aspect-[1.91/1] bg-[#f4f4f5] dark:bg-[#2e2e2e] overflow-hidden">
-          {imageLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#f4f4f5] dark:bg-[#2e2e2e]">
-              <div className="w-8 h-8 border-2 border-[#2cabff]/30 border-t-[#2cabff] rounded-full animate-spin" />
-            </div>
-          )}
+    <div className={cn('flex gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm', className)}>
+      {metadata.ogImage && (
+        <div className="mr-3 overflow-hidden rounded border border-gray-200 bg-gray-100" style={{ aspectRatio: '1.91/1', width: '120px' }}>
           <img
-            src={image}
-            alt={title}
-            className={cn(
-              "w-full h-full object-cover transition-opacity duration-300",
-              imageLoading ? "opacity-0" : "opacity-100"
-            )}
-            onLoad={() => setImageLoading(false)}
-            onError={() => {
-              setImageError(true);
-              setImageLoading(false);
-            }}
+            src={metadata.ogImage}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
           />
         </div>
-      ) : (
-        <div className="aspect-[1.91/1] bg-[#f4f4f5] dark:bg-[#2e2e2e] flex items-center justify-center">
-          <ImageOff className="w-8 h-8 text-[#999999]" />
-        </div>
       )}
-      <div className="p-3 space-y-1">
-        <p className="text-[#999999] text-xs truncate">
-          {getUrlHostname(url)}
+      
+      <div className="flex-1 min-w-0">
+        <div className="mb-1">
+          <span className="text-xs font-bold text-gray-900">{siteName}</span>
+        </div>
+        
+        <h3 className="line-clamp-2 font-semibold text-[15px] leading-snug text-gray-900">
+          {metadata.ogTitle || metadata.title || 'No title available'}
+        </h3>
+        
+        <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-gray-700">
+          {metadata.ogDescription || metadata.description || 'No description available'}
         </p>
-        <p className="font-medium text-[#2cabff] text-sm line-clamp-1">
-          {title}
-        </p>
-        {description && (
-          <p className="text-[#999999] text-xs line-clamp-2 leading-relaxed">
-            {description}
-          </p>
-        )}
+        
+        <div className="mt-1 text-[12px] text-gray-500">
+          <span className="font-bold">{new URL(url).hostname}</span>
+          <span className="text-gray-400"> · {url}
+</span>
+        </div>
       </div>
     </div>
   );
