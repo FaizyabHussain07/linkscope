@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Search, Check, AlertCircle, X } from "lucide-react"
+import { Search, Check, AlertCircle } from "lucide-react"
 
 const PLATFORMS = [
   { id: "telegram", label: "Telegram", icon: "T", color: "#2CABFF" },
@@ -111,7 +111,7 @@ export function HeroInspector() {
             <p className="text-[10px] uppercase tracking-wider text-[#A1A1AA]">
               {platformData?.color && (
                 <span className="inline-block h-2 w-2 rounded-full mr-1.5 align-middle" style={{ backgroundColor: platformData.color }} />
-              ]}
+              )}
               {DEMO_META.siteName}
             </p>
             <h3 className="text-base font-semibold text-white line-clamp-2 mt-1">
