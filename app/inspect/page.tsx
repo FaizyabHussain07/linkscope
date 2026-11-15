@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { SettingsProvider } from "@/context/settings-context";
 import { useMetadata } from "@/hooks/use-metadata";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -24,7 +23,7 @@ import {
   RawMetadata,
 } from "@/components/metadata-tabs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Copy, X, Check, ChevronDown, Shield, ExternalLink } from "lucide-react";
+import { AlertCircle, Copy, X, Check, ChevronDown, Shield, Star } from "lucide-react";
 import { GitHubStars } from "@/components/github-stars";
 import { Button } from "@/components/ui/button";
 import { formatUrl } from "@/lib/cache";
@@ -68,7 +67,7 @@ function LinkScopeContent() {
   );
 
   const handleCopyInstall = useCallback(async () => {
-    const success = await copyToClipboard("bun add -g ngrok");
+    const success = await copyToClipboard("npm install -g ngrok");
     if (success) {
       setCopiedInstall(true);
       setTimeout(() => setCopiedInstall(false), 2000);
@@ -96,7 +95,7 @@ function LinkScopeContent() {
   useEffect(() => {
     const fetchGitHubStars = async () => {
       try {
-        const response = await fetch("https://api.github.com/repos/linkscope/linkscope");
+        const response = await fetch("https://api.github.com/repos/FaizyabHussain07/linkscope");
         if (response.ok) {
           const data = await response.json();
           setGithubStars(data.stargazers_count || 0);
@@ -142,20 +141,19 @@ function LinkScopeContent() {
   });
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="w-full bg-background border-b border-border/50">
-        <div className="container mx-auto px-4 py-4 max-w-2xl flex items-center justify-between">
+    <div className="min-h-screen bg-[#09090B] flex flex-col">
+      <header className="w-full border-b border-[#27272A] bg-[#09090B]/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="mx-auto flex h-16 max-w-2xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-brand-500 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] shadow-lg shadow-[#6366F1]/20">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-white">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div>
-              <span className="font-semibold text-lg">LinkScope</span>
-              <span className="text-xs text-muted-foreground ml-2">inspect</span>
+              <span className="text-lg font-semibold tracking-tight">LinkScope</span>
+              <span className="text-xs text-[#A1A1AA] ml-2">inspect</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -163,7 +161,7 @@ function LinkScopeContent() {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setSecurityNote(!securityNote)}
-                  className="text-foreground/70 hover:text-foreground transition-colors p-2"
+                  className="text-[#A1A1AA] hover:text-white transition-colors p-2"
                 >
                   <Shield className="w-5 h-5" />
                 </button>
@@ -173,24 +171,24 @@ function LinkScopeContent() {
               </TooltipContent>
             </Tooltip>
             <a
-              href="https://github.com/linkscope/linkscope"
+              href="https://github.com/FaizyabHussain07/linkscope"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground/70 hover:text-foreground transition-colors"
+              className="text-[#A1A1AA] hover:text-white transition-colors"
             >
-              <GitHubStars repo="linkscope/linkscope" stargazersCount={githubStars} />
+              <GitHubStars repo="FaizyabHussain07/linkscope" stargazersCount={githubStars} />
             </a>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12 max-w-2xl flex-1">
+      <main className="mx-auto max-w-2xl px-4 py-12 flex-1">
         <div className="space-y-8">
           <div className="space-y-3">
-            <h1 className="text-3xl font-serif italic text-foreground" style={{ fontFamily: 'var(--font-serif)' }}>
-              LinkScope
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Inspect any URL
             </h1>
-            <p className="text-md text-foreground/80">
+            <p className="text-[#A1A1AA]">
               See how your links appear on social platforms.
             </p>
           </div>
@@ -209,15 +207,15 @@ function LinkScopeContent() {
             {!metadata && !loading && !error && !localError && (
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <p className="text-sm uppercase tracking-wide text-foreground/70">TRY THESE</p>
-                  <div className="flex flex-wrap gap-6">
+                  <p className="text-xs uppercase tracking-wide text-[#A1A1AA]">TRY THESE</p>
+                  <div className="flex flex-wrap gap-4">
                     {EXAMPLE_URLS.map((exampleUrl) => (
                       <button
                         key={exampleUrl}
                         onClick={() => handleExampleClick(exampleUrl)}
-                        className="flex items-center gap-2 text-foreground hover:text-foreground/70 transition-colors"
+                        className="flex items-center gap-2 text-[#A1A1AA] hover:text-white transition-colors"
                       >
-                        <span>›</span>
+                        <span className="text-[#6366F1]">›</span>
                         <span>{exampleUrl}</span>
                       </button>
                     ))}
@@ -229,25 +227,25 @@ function LinkScopeContent() {
                     onClick={() => setLocalhostExpanded(!localhostExpanded)}
                     className="flex items-center gap-2 w-full text-left"
                   >
-                    <p className="text-sm uppercase tracking-wide text-foreground/70">LOCALHOST</p>
+                    <p className="text-xs uppercase tracking-wide text-[#A1A1AA]">LOCALHOST</p>
                     <ChevronDown
                       className={cn(
-                        "w-4 h-4 text-foreground/70 transition-transform",
+                        "w-4 h-4 text-[#A1A1AA] transition-transform",
                         localhostExpanded ? "rotate-180" : ""
                       )}
                     />
                   </button>
                   {localhostExpanded && (
-                    <div className="space-y-4 pt-2">
-                      <p className="text-sm text-foreground/80">
+                    <div className="space-y-4 pt-3">
+                      <p className="text-sm text-[#A1A1AA]">
                         Test your local server using ngrok
                       </p>
                       <div className="space-y-3">
                         <div className="space-y-1.5">
-                          <div className="text-xs text-foreground/60">1. INSTALL</div>
+                          <div className="text-xs text-[#52525B]">1. INSTALL</div>
                           <div className="flex items-center gap-2 group">
-                            <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono text-foreground/90">
-                              bun add -g ngrok
+                            <code className="flex-1 bg-[#18181B] px-3 py-2 rounded text-sm font-mono text-white/90">
+                              npm install -g ngrok
                             </code>
                             <button
                               onClick={handleCopyInstall}
@@ -255,7 +253,7 @@ function LinkScopeContent() {
                                 "transition-all p-1.5 rounded",
                                 copiedInstall
                                   ? "opacity-100 bg-green-500/20 text-green-500"
-                                  : "opacity-0 group-hover:opacity-100 hover:bg-muted text-foreground/70"
+                                  : "opacity-0 group-hover:opacity-100 hover:bg-[#27272A] text-[#A1A1AA]"
                               )}
                             >
                               {copiedInstall ? (
@@ -267,14 +265,14 @@ function LinkScopeContent() {
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <div className="text-xs text-foreground/60">
+                          <div className="text-xs text-[#52525B]">
                             2. START YOUR LOCAL SERVER ON PORT 3000
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <div className="text-xs text-foreground/60">3. RUN TUNNEL</div>
+                          <div className="text-xs text-[#52525B]">3. RUN TUNNEL</div>
                           <div className="flex items-center gap-2 group">
-                            <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono text-foreground/90">
+                            <code className="flex-1 bg-[#18181B] px-3 py-2 rounded text-sm font-mono text-white/90">
                               ngrok http 3000
                             </code>
                             <button
@@ -283,7 +281,7 @@ function LinkScopeContent() {
                                 "transition-all p-1.5 rounded",
                                 copiedTunnel
                                   ? "opacity-100 bg-green-500/20 text-green-500"
-                                  : "opacity-0 group-hover:opacity-100 hover:bg-muted text-foreground/70"
+                                  : "opacity-0 group-hover:opacity-100 hover:bg-[#27272A] text-[#A1A1AA]"
                               )}
                             >
                               {copiedTunnel ? (
@@ -295,7 +293,7 @@ function LinkScopeContent() {
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <div className="text-xs text-foreground/60">
+                          <div className="text-xs text-[#52525B]">
                             4. COPY THE HTTPS URL FROM THE OUTPUT
                           </div>
                         </div>
@@ -308,11 +306,11 @@ function LinkScopeContent() {
           </div>
 
           {securityNote && (
-            <div className="flex items-start gap-3 p-4 bg-brand-500/10 border border-brand-500/20 rounded-lg">
-              <Shield className="w-5 h-5 text-brand-500 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 bg-[#6366F1]/10 border border-[#6366F1]/20 rounded-lg">
+              <Shield className="w-5 h-5 text-[#6366F1] shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-brand-500 mb-1">Security Protected</p>
-                <p className="text-foreground/80">
+                <p className="font-medium text-[#6366F1] mb-1">Security Protected</p>
+                <p className="text-[#A1A1AA]">
                   All URLs are validated and checked for SSRF vulnerabilities before fetching.
                   Private IPs, localhost, and cloud metadata endpoints are blocked.
                 </p>
@@ -328,14 +326,14 @@ function LinkScopeContent() {
 
           {(error || localError) && !loading && (
             <div className="flex flex-col items-center justify-center py-16">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 mb-4">
-                <AlertCircle className="h-8 w-8 text-destructive" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 mb-4">
+                <AlertCircle className="h-8 w-8 text-red-400" />
               </div>
               <h2 className="text-xl font-semibold mb-2">Unable to fetch preview</h2>
-              <p className="text-muted-foreground text-center max-w-md">
+              <p className="text-[#A1A1AA] text-center max-w-md">
                 {error || localError}
               </p>
-              <Button onClick={clear} variant="outline" className="mt-4">
+              <Button onClick={clear} variant="outline" className="mt-4 border-[#27272A] hover:bg-[#18181B] text-white">
                 Try another URL
               </Button>
             </div>
@@ -347,43 +345,43 @@ function LinkScopeContent() {
                 <TabsList className="inline-flex w-max min-w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
                   <TabsTrigger
                     value="score"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                   >
                     SCORE
                   </TabsTrigger>
                   <TabsTrigger
                     value="previews"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                   >
                     PREVIEWS
                   </TabsTrigger>
                   <TabsTrigger
                     value="basic"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                   >
                     BASIC
                   </TabsTrigger>
                   <TabsTrigger
                     value="opengraph"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                   >
                     OPEN GRAPH
                   </TabsTrigger>
                   <TabsTrigger
                     value="x"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                   >
                     X
                   </TabsTrigger>
                   <TabsTrigger
                     value="images"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                   >
                     IMAGES
                   </TabsTrigger>
                   <TabsTrigger
                     value="raw"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                   >
                     RAW
                   </TabsTrigger>
@@ -400,43 +398,43 @@ function LinkScopeContent() {
                     <TabsList className="inline-flex w-max min-w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
                       <TabsTrigger
                         value="telegram"
-                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                       >
                         TELEGRAM
                       </TabsTrigger>
                       <TabsTrigger
                         value="discord"
-                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                       >
                         DISCORD
                       </TabsTrigger>
                       <TabsTrigger
                         value="slack"
-                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                       >
                         SLACK
                       </TabsTrigger>
                       <TabsTrigger
                         value="x"
-                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                       >
                         X
                       </TabsTrigger>
                       <TabsTrigger
                         value="facebook"
-                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                       >
                         FACEBOOK
                       </TabsTrigger>
                       <TabsTrigger
                         value="linkedin"
-                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                       >
                         LINKEDIN
                       </TabsTrigger>
                       <TabsTrigger
                         value="whatsapp"
-                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand-500 data-[state=active]:bg-transparent px-4 py-3"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#6366F1] data-[state=active]:bg-transparent px-4 py-3 text-[#A1A1AA] hover:text-white"
                       >
                         WHATSAPP
                       </TabsTrigger>
@@ -474,81 +472,39 @@ function LinkScopeContent() {
               </TabsContent>
 
               <TabsContent value="basic" className="mt-8">
-                <BasicMetadata metadata={metadata} />
+                <BasicMetadata metadata={metadata} url={url} />
               </TabsContent>
 
               <TabsContent value="opengraph" className="mt-8">
-                <OpenGraphMetadata metadata={metadata} />
+                <OpenGraphMetadata metadata={metadata} url={url} />
               </TabsContent>
 
               <TabsContent value="x" className="mt-8">
-                <TwitterMetadata metadata={metadata} />
+                <TwitterMetadata metadata={metadata} url={url} />
               </TabsContent>
 
               <TabsContent value="images" className="mt-8">
-                <ImagesMetadata metadata={metadata} />
+                <ImagesMetadata metadata={metadata} url={url} />
               </TabsContent>
 
               <TabsContent value="raw" className="mt-8">
-                <RawMetadata metadata={metadata} />
+                <RawMetadata metadata={metadata} url={url} />
               </TabsContent>
             </Tabs>
           )}
-
-          {!metadata && !loading && !error && !localError && recentUrls.length > 0 && (
-            <div className="space-y-2 pt-8 border-t border-border">
-              <div className="flex items-center justify-between">
-                <p className="text-sm uppercase tracking-wide text-foreground/70">RECENT</p>
-                <button
-                  onClick={handleClearRecent}
-                  className="flex items-center gap-1 text-sm uppercase tracking-wide text-foreground/70 hover:text-foreground transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  <span>CLEAR</span>
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-6">
-                {recentUrls.map((recentUrl) => (
-                  <button
-                    key={recentUrl}
-                    onClick={() => handleRecentClick(recentUrl)}
-                    className="flex items-center gap-2 text-foreground hover:text-foreground/70 transition-colors"
-                  >
-                    <span className="text-foreground/50">›</span>
-                    <span>{getUrlHostname(recentUrl)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </main>
-
-      <footer className="w-full bg-background border-t border-border/50 mt-auto">
-        <div className="container mx-auto px-4 py-4 max-w-2xl flex items-center justify-between">
-          <span className="text-sm text-foreground/70">
-            2026 © LinkScope — See how your links look everywhere
-          </span>
-          <div className="flex items-center gap-3">
-            <a
-              href="https://github.com/linkscope/linkscope"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-foreground/70 hover:text-foreground transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
 
-export default function InspectPage() {
+function InspectPage() {
   return (
-    <SettingsProvider>
+    <SettingsProvider initialSettings={{}}
+      setSettings={() => {}}>
       <LinkScopeContent />
     </SettingsProvider>
   );
 }
+
+export default InspectPage;
