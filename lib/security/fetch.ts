@@ -4,7 +4,7 @@
  */
 
 import { validateFetchUrl, validateRedirectUrl } from './url-validator';
-import { DEFAULT_BLOCKED_IPS } from './ip-validator';
+import { DEFAULT_BLOCKED_IPS, isIpBlocked } from './ip-validator';
 
 export interface FetchConfig {
   timeoutMs?: number;
@@ -83,7 +83,8 @@ export async function secureFetch(
   const targetUrl = validation.cleanedUrl!;
   const hostname = new URL(targetUrl).hostname;
 
-  if (DEFAULT_BLOCKED_IPS.includes(hostname)) {
+  // Check if hostname is in blocked list
+  if (isIpBlocked(hostname)) {
     return {
       success: false,
       url: inputUrl,
