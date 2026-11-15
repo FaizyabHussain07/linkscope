@@ -12,7 +12,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@base-ui/react": "^1.1.0",
     "@types/cheerio": "^1.0.0",
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
