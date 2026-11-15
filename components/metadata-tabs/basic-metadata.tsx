@@ -1,49 +1,122 @@
-import { ExtractedMetadata } from "@/types";
+import { ExtractedMetadata } from '@/types';
+import { Check, AlertTriangle, X } from 'lucide-react';
 
 interface BasicMetadataProps {
   metadata: ExtractedMetadata;
 }
 
 export function BasicMetadata({ metadata }: BasicMetadataProps) {
+  const getStatus = (value?: string | number | null) => {
+    if (!value) return { icon: X, color: 'text-red-500', label: 'Missing' };
+    if (typeof value === 'string' && value.trim() === '') return { icon: AlertTriangle, color: 'text-yellow-500', label: 'Empty' };
+    return { icon: Check, color: 'text-green-500', label: 'Present' };
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h3 className="text-lg font-medium">Basic Metadata</h3>
+      
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Title</label>
-          <p className="text-sm text-muted-foreground font-mono break-all">
-            {metadata.title || "Not found"}
-          </p>
+          <label className="text-sm font-medium">Page Title</label>
+          <div className="flex items-start gap-2">
+            <div className="mt-0.5">
+              {({ icon: Icon, color, label }) => (
+                <Icon className={cn('w-4 h-4', color)} />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground font-mono break-all">
+                {metadata.title || '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">{getStatus(metadata.title).label}</p>
+            </div>
+          </div>
         </div>
+
         <div className="space-y-2">
-          <label className="text-sm font-medium">Description</label>
-          <p className="text-sm text-muted-foreground font-mono break-all">
-            {metadata.description || "Not found"}
-          </p>
+          <label className="text-sm font-medium">Meta Description</label>
+          <div className="flex items-start gap-2">
+            <div className="mt-0.5">
+              {({ icon: Icon, color, label }) => (
+                <Icon className={cn('w-4 h-4', color)} />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground font-mono break-all">
+                {metadata.description || '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">{getStatus(metadata.description).label}</p>
+            </div>
+          </div>
         </div>
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Canonical URL</label>
-          <p className="text-sm text-muted-foreground font-mono break-all">
-            {metadata.canonical || "Not found"}
-          </p>
+          <div className="flex items-start gap-2">
+            <div className="mt-0.5">
+              {({ icon: Icon, color, label }) => (
+                <Icon className={cn('w-4 h-4', color)} />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground font-mono break-all">
+                {metadata.canonical || '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">{getStatus(metadata.canonical).label}</p>
+            </div>
+          </div>
         </div>
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Language</label>
-          <p className="text-sm text-muted-foreground font-mono">
-            {metadata.language || "Not specified"}
-          </p>
+          <div className="flex items-start gap-2">
+            <div className="mt-0.5">
+              {({ icon: Icon, color, label }) => (
+                <Icon className={cn('w-4 h-4', color)} />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground font-mono">
+                {metadata.language || '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">{getStatus(metadata.language).label}</p>
+            </div>
+          </div>
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Charset</label>
-          <p className="text-sm text-muted-foreground font-mono">
-            {metadata.charset || "Not specified"}
-          </p>
-        </div>
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Viewport</label>
-          <p className="text-sm text-muted-foreground font-mono break-all">
-            {metadata.viewport || "Not found"}
-          </p>
+          <div className="flex items-start gap-2">
+            <div className="mt-0.5">
+              {({ icon: Icon, color, label }) => (
+                <Icon className={cn('w-4 h-4', color)} />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground font-mono break-all">
+                {metadata.viewport || '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">{getStatus(metadata.viewport).label}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Charset</label>
+          <div className="flex items-start gap-2">
+            <div className="mt-0.5">
+              {({ icon: Icon, color, label }) => (
+                <Icon className={cn('w-4 h-4', color)} />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground font-mono">
+                {metadata.charset || '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">{getStatus(metadata.charset).label}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
