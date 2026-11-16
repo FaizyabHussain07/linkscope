@@ -45,73 +45,14 @@ export const FEATURES = {
   imageInspection: process.env.FEATURE_IMAGE_INSPECTION !== 'false',
   /** Enable metadata generation */
   metadataGeneration: process.env.FEATURE_METADATA_GENERATION !== 'false',
-  /** Enable exports */
-  exports: process.env.FEATURE_EXPORTS !== 'false',
-  /** Enable API endpoints */
-  api: process.env.FEATURE_API !== 'false',
 };
 
-// Premium/hosted features configuration
-export const PREMIUM_CONFIG = {
-  /** Whether premium features are enabled (hosted only) */
-  enabled: process.env.PREMIUM_ENABLED === 'true',
-  /** Maximum inspections per day for free tier */
-  freeTierDailyLimit: parseInt(process.env.PREMIUM_FREE_DAILY_LIMIT || '50', 10),
-  /** Whether to require license verification */
-  requireLicense: process.env.PREMIUM_REQUIRE_LICENSE === 'true',
-};
-
-// Crawler identity
-export const CRAWLER = {
-  userAgent: process.env.CRAWLER_USER_AGENT || `LinkScope/1.0 (+${APP_URL})`,
-  acceptLanguage: 'en-US,en;q=0.5',
-};
-
-// Validation messages
-export const VALIDATION_MESSAGES = {
-  urlRequired: 'URL is required',
-  urlInvalid: 'Please enter a valid URL',
-  urlTooLong: 'URL is too long',
-  schemeNotAllowed: 'Only HTTP and HTTPS URLs are allowed',
-  credentialsNotAllowed: 'URLs with credentials are not allowed',
-  localhostNotAllowed: 'Localhost URLs are not allowed',
-  timeout: 'The request timed out',
-  tooLarge: 'The response was too large',
-  tooManyRedirects: 'Too many redirects',
-  notFound: 'The page could not be found',
-  error: 'An error occurred while fetching the URL',
-};
-
-// Default recommendations
-export const DEFAULT_RECOMMENDATIONS = {
-  ogTitle: {
-    title: 'Add an Open Graph title',
-    description: 'Open Graph titles are used by social platforms to display your page title. Without it, platforms may use your HTML title or truncate the URL.',
-    priority: 'high' as const,
-  },
-  ogDescription: {
-    title: 'Add an Open Graph description',
-    description: 'Open Graph descriptions provide a summary of your page content for social sharing.',
-    priority: 'high' as const,
-  },
-  ogImage: {
-    title: 'Add an Open Graph image',
-    description: 'Open Graph images make your links visually appealing when shared. Recommended size: 1200x630 pixels.',
-    priority: 'high' as const,
-  },
-  twitterCard: {
-    title: 'Add a Twitter Card type',
-    description: 'Twitter Card types define how your content appears on X (Twitter).',
-    priority: 'medium' as const,
-  },
-  canonical: {
-    title: 'Add a canonical URL',
-    description: 'Canonical URLs help search engines understand which version of a page to index.',
-    priority: 'medium' as const,
-  },
-  favicon: {
-    title: 'Add a favicon',
-    description: 'Favicons appear in browser tabs and bookmarks, improving brand recognition.',
-    priority: 'low' as const,
-  },
+export default {
+  APP_NAME,
+  APP_VERSION,
+  APP_URL,
+  IS_HOSTED,
+  SECURITY_CONFIG,
+  INSPECTION_LIMITS,
+  FEATURES,
 };

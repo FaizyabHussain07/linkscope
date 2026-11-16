@@ -4,7 +4,8 @@ import { MetaData } from "@/hooks/use-metadata";
 import { cn } from "@/lib/utils";
 import { Check, AlertCircle, Info } from "lucide-react";
 import { motion } from "motion/react";
-import { performAudit, getScoreBreakdown } from "@/lib/analyzers";
+import { performAudit, calculateScore, getScoreBreakdown } from "@/lib/analyzers";
+import type { ExtractedMetadata } from "@/types";
 import {
   Tooltip,
   TooltipContent,
@@ -21,7 +22,7 @@ export function ScoreDisplay({ metadata, className }: ScoreDisplayProps) {
   if (!metadata) return null;
 
   // Create a minimal ExtractedMetadata from MetaData
-  const extractedMetadata = {
+  const extractedMetadata: ExtractedMetadata = {
     ...metadata,
     duplicates: [],
     emptyTags: [],
@@ -30,9 +31,9 @@ export function ScoreDisplay({ metadata, className }: ScoreDisplayProps) {
     rawMetaTags: [],
     rawLinkTags: [],
   };
-  const audit = performAudit(extractedMetadata as any);
+  const audit = performAudit(extractedMetadata);
   const breakdown = getScoreBreakdown(audit);
-  const score = audit.score;
+  const score = calculateScore(audit);
 
   const circumference = 2 * Math.PI * 45;
   const offset = circumference - (score / 100) * circumference;

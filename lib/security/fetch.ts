@@ -4,7 +4,8 @@
  */
 
 import { validateFetchUrl, validateRedirectUrl } from './url-validator';
-import { DEFAULT_BLOCKED_IPS } from './ip-validator';
+import { lookup } from 'node:dns/promises';
+import { DEFAULT_BLOCKED_IPS, isIpBlocked, isValidIp } from './ip-validator';
 
 export interface FetchConfig {
   timeoutMs?: number;
@@ -13,6 +14,7 @@ export interface FetchConfig {
   connectTimeoutMs?: number;
   allowedContentTypes?: string[];
   userAgent?: string;
+  blockedHosts?: string[];
 }
 
 export interface FetchResult {
@@ -56,11 +58,20 @@ export async function secureFetch(
   inputUrl: string,
   config: FetchConfig = {}
 ): Promise<FetchResult> {
+<<<<<<< HEAD
   const timeoutMs: number = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxRedirects: number = config.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const maxSizeBytes: number = config.maxSizeBytes ?? DEFAULT_MAX_SIZE_BYTES;
   const allowedContentTypes: string[] = config.allowedContentTypes ?? DEFAULT_ALLOWED_CONTENT_TYPES;
   const userAgent: string = config.userAgent ?? DEFAULT_USER_AGENT;
+=======
+  const timeoutMs = config.timeoutMs ?? 30000;
+  const maxRedirects = config.maxRedirects ?? 5;
+  const maxSizeBytes = config.maxSizeBytes ?? 10 * 1024 * 1024;
+  const allowedContentTypes = config.allowedContentTypes ?? DEFAULT_CONFIG.allowedContentTypes!;
+  const userAgent = config.userAgent ?? DEFAULT_CONFIG.userAgent!;
+  const blockedHosts = config.blockedHosts ?? [];
+>>>>>>> f060bcbb38b2c3f280eec5711da383a7773f5bf1
 
   const validation = validateFetchUrl(inputUrl);
   if (!validation.valid) {
@@ -79,22 +90,6 @@ export async function secureFetch(
   }
 
   const targetUrl = validation.cleanedUrl!;
-  const hostname = new URL(targetUrl).hostname;
-
-  if (DEFAULT_BLOCKED_IPS.includes(hostname)) {
-    return {
-      success: false,
-      url: inputUrl,
-      finalUrl: targetUrl,
-      status: 0,
-      headers: {},
-      content: '',
-      contentLength: 0,
-      contentType: '',
-      redirectCount: 0,
-      error: 'This host is not allowed',
-    };
-  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -109,6 +104,11 @@ export async function secureFetch(
       redirectCount = i;
       if (Date.now() - startTime > timeoutMs) {
         return fail('Request timed out', inputUrl, currentUrl, redirectCount);
+      }
+
+      const destinationCheck = await validateResolvedDestination(currentUrl, blockedHosts);
+      if (!destinationCheck.valid) {
+        return fail(destinationCheck.error || 'This host is not allowed', inputUrl, currentUrl, redirectCount);
       }
 
       const response = await fetch(currentUrl, {
@@ -298,7 +298,11 @@ export async function secureImageFetch(
   const imageConfig: FetchConfig = {
     ...config,
     allowedContentTypes: [
+<<<<<<< HEAD
       ...(config.allowedContentTypes || DEFAULT_ALLOWED_CONTENT_TYPES),
+=======
+      ...(config.allowedContentTypes ?? DEFAULT_CONFIG.allowedContentTypes ?? []),
+>>>>>>> f060bcbb38b2c3f280eec5711da383a7773f5bf1
       'image/jpeg',
       'image/png',
       'image/gif',
@@ -311,4 +315,32 @@ export async function secureImageFetch(
   };
 
   return secureFetch(imageUrl, imageConfig);
+}
+
+async function validateResolvedDestination(url: string, blockedHosts: string[]): Promise<{ valid: boolean; error?: string }> {
+  const hostname = new URL(url).hostname;
+  const normalizedHostname = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+
+  if (DEFAULT_BLOCKED_IPS.includes(normalizedHostname) || blockedHosts.some((host) => host.trim().toLowerCase() === normalizedHostname)) {
+    return { valid: false, error: 'This host is not allowed' };
+  }
+
+  if (isValidIp(normalizedHostname)) {
+    return isIpBlocked(normalizedHostname)
+      ? { valid: false, error: 'This host is not allowed' }
+      : { valid: true };
+  }
+
+  let addresses: Array<{ address: string; family: number }>;
+  try {
+    addresses = await lookup(normalizedHostname, { all: true, verbatim: true });
+  } catch {
+    return { valid: false, error: 'Could not resolve the destination host' };
+  }
+
+  if (addresses.length === 0 || addresses.some(({ address }) => isIpBlocked(address))) {
+    return { valid: false, error: 'This host resolves to a private or restricted network' };
+  }
+
+  return { valid: true };
 }

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 56" role="img" aria-labelledby="title">
+  <title id="title">LinkScope</title>
+  <g transform="translate(2 2)">
+    <rect width="52" height="52" rx="12" fill="#111827"/>
+    <path d="M26 8 9 17l17 9 17-9L26 8Z" fill="none" stroke="#67e8f9" stroke-width="4" stroke-linejoin="round"/>
+    <path d="m9 26 17 9 17-9M9 35l17 9 17-9" fill="none" stroke="#67e8f9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="68" y="37" fill="#f4f4f5" font-family="Arial, sans-serif" font-size="28" font-weight="600" letter-spacing="-1">LinkScope</text>
+</svg>

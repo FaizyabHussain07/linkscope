@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { SettingsProvider } from "@/context/settings-context";
 import { useMetadata } from "@/hooks/use-metadata";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -24,7 +23,7 @@ import {
   RawMetadata,
 } from "@/components/metadata-tabs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Copy, X, Check, ChevronDown, Shield, ExternalLink } from "lucide-react";
+import { AlertCircle, Copy, Check, ChevronDown, Shield, ExternalLink } from "lucide-react";
 import { GitHubStars } from "@/components/github-stars";
 import { Button } from "@/components/ui/button";
 import { formatUrl } from "@/lib/cache";
@@ -45,19 +44,14 @@ function LinkScopeContent() {
     refresh,
   } = useMetadata();
 
-  const [localError, setLocalError] = useState<string>("");
+  const [localError, setLocalError] = useState("");
   const [localhostExpanded, setLocalhostExpanded] = useState(true);
   const [copiedInstall, setCopiedInstall] = useState(false);
   const [copiedTunnel, setCopiedTunnel] = useState(false);
-  const [recentUrls, setRecentUrls] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      return getRecentUrls();
-    }
-    return [];
-  });
-  const [githubStars, setGithubStars] = useState<number>(0);
+  const [recentUrls, setRecentUrls] = useState<string[]>([]);
+  const [githubStars, setGithubStars] = useState(0);
   const [securityNote, setSecurityNote] = useState(false);
-  const lastAddedUrlRef = useRef<string>("");
+  const lastAddedUrlRef = useRef("");
 
   const handleSubmit = useCallback(
     (urlToFetch: string) => {
@@ -68,7 +62,7 @@ function LinkScopeContent() {
   );
 
   const handleCopyInstall = useCallback(async () => {
-    const success = await copyToClipboard("bun add -g ngrok");
+    const success = await copyToClipboard("npm install -g ngrok");
     if (success) {
       setCopiedInstall(true);
       setTimeout(() => setCopiedInstall(false), 2000);
@@ -84,19 +78,25 @@ function LinkScopeContent() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setRecentUrls(getRecentUrls());
+    }
+  }, []);
+
+  useEffect(() => {
     if (metadata && url && !loading && lastAddedUrlRef.current !== url) {
       addRecentUrl(url);
       lastAddedUrlRef.current = url;
-      requestAnimationFrame(() => {
+      if (typeof window !== "undefined") {
         setRecentUrls(getRecentUrls());
-      });
+      }
     }
   }, [metadata, url, loading]);
 
   useEffect(() => {
     const fetchGitHubStars = async () => {
       try {
-        const response = await fetch("https://api.github.com/repos/linkscope/linkscope");
+        const response = await fetch("https://api.github.com/repos/FaizyabHussain07/linkscope");
         if (response.ok) {
           const data = await response.json();
           setGithubStars(data.stargazers_count || 0);
@@ -136,8 +136,10 @@ function LinkScopeContent() {
     onClear: clear,
     onRefresh: refresh,
     onFocusInput: () => {
-      const input = document.querySelector('input[type="url"]') as HTMLInputElement;
-      input?.focus();
+      const input = document.querySelector('input[type="url"]');
+      if (input) {
+        (input as HTMLInputElement).focus();
+      }
     },
   });
 
@@ -159,6 +161,9 @@ function LinkScopeContent() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <a href="/tools" className="hidden text-sm text-foreground/70 transition-colors hover:text-foreground sm:inline">
+              Tools
+            </a>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -169,16 +174,16 @@ function LinkScopeContent() {
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Security protected · SSRF safe</p>
+                <p>Security protected - SSRF safe</p>
               </TooltipContent>
             </Tooltip>
             <a
-              href="https://github.com/linkscope/linkscope"
+              href="https://github.com/FaizyabHussain07/linkscope"
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground/70 hover:text-foreground transition-colors"
             >
-              <GitHubStars repo="linkscope/linkscope" stargazersCount={githubStars} />
+              <GitHubStars repo="FaizyabHussain07/linkscope" stargazersCount={githubStars} />
             </a>
           </div>
         </div>
@@ -187,7 +192,7 @@ function LinkScopeContent() {
       <main className="container mx-auto px-4 py-12 max-w-2xl flex-1">
         <div className="space-y-8">
           <div className="space-y-3">
-            <h1 className="text-3xl font-serif italic text-foreground" style={{ fontFamily: 'var(--font-serif)' }}>
+            <h1 className="text-3xl font-serif italic text-foreground">
               LinkScope
             </h1>
             <p className="text-md text-foreground/80">
@@ -247,7 +252,7 @@ function LinkScopeContent() {
                           <div className="text-xs text-foreground/60">1. INSTALL</div>
                           <div className="flex items-center gap-2 group">
                             <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono text-foreground/90">
-                              bun add -g ngrok
+                              npm install -g ngrok
                             </code>
                             <button
                               onClick={handleCopyInstall}
@@ -322,7 +327,7 @@ function LinkScopeContent() {
 
           {loading && (
             <div className="flex flex-col items-center justify-center min-h-[60vh] py-24">
-              <div className="loader" style={{ color: 'var(--foreground)' }} />
+              <div className="loader" style={{ color: "var(--foreground)" }} />
             </div>
           )}
 
@@ -494,53 +499,8 @@ function LinkScopeContent() {
               </TabsContent>
             </Tabs>
           )}
-
-          {!metadata && !loading && !error && !localError && recentUrls.length > 0 && (
-            <div className="space-y-2 pt-8 border-t border-border">
-              <div className="flex items-center justify-between">
-                <p className="text-sm uppercase tracking-wide text-foreground/70">RECENT</p>
-                <button
-                  onClick={handleClearRecent}
-                  className="flex items-center gap-1 text-sm uppercase tracking-wide text-foreground/70 hover:text-foreground transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  <span>CLEAR</span>
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-6">
-                {recentUrls.map((recentUrl) => (
-                  <button
-                    key={recentUrl}
-                    onClick={() => handleRecentClick(recentUrl)}
-                    className="flex items-center gap-2 text-foreground hover:text-foreground/70 transition-colors"
-                  >
-                    <span className="text-foreground/50">›</span>
-                    <span>{getUrlHostname(recentUrl)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </main>
-
-      <footer className="w-full bg-background border-t border-border/50 mt-auto">
-        <div className="container mx-auto px-4 py-4 max-w-2xl flex items-center justify-between">
-          <span className="text-sm text-foreground/70">
-            2026 © LinkScope — See how your links look everywhere
-          </span>
-          <div className="flex items-center gap-3">
-            <a
-              href="https://github.com/linkscope/linkscope"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-foreground/70 hover:text-foreground transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

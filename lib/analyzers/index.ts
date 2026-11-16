@@ -22,7 +22,7 @@ const CATEGORY_WEIGHTS: Record<string, { total: number; checks: Array<{ id: stri
       { id: 'og-type', name: 'Has OG Type', weight: 3, check: (m) => !!m.ogType },
       { id: 'og-site-name', name: 'Has OG Site Name', weight: 3, check: (m) => !!m.ogSiteName },
       { id: 'og-locale', name: 'Has OG Locale', weight: 2, check: (m) => !!m.ogLocale },
-      { id: 'og-image-dims', name: 'OG Image Dimensions', weight: 6, check: (m) => typeof m.ogImageWidth === 'number' && typeof m.ogImageHeight === 'number' && m.ogImageWidth >= 1200 && m.ogImageHeight >= 630 },
+      { id: 'og-image-dims', name: 'OG Image Dimensions', weight: 6, check: (m) => typeof m.ogImageWidth === 'number' && typeof m.ogImageHeight === 'number' && m.ogImageWidth >= 1200 && m.ogImageWidth <= 5000 && m.ogImageHeight >= 630 && m.ogImageHeight <= 2500 },
     ],
   },
   twitter: {
@@ -47,267 +47,268 @@ const CATEGORY_WEIGHTS: Record<string, { total: number; checks: Array<{ id: stri
   },
 };
 
-/**
- * Perform audit on extracted metadata
- */
 export function performAudit(metadata: ExtractedMetadata): AuditResult {
-  const checks: AuditCheck[] = [];
   const findings: AuditFinding[] = [];
+  const passed: AuditCheck[] = [];
+  const failed: AuditCheck[] = [];
   const recommendations: Recommendation[] = [];
   const categoryScores: CategoryScore[] = [];
 
-  let totalScore = 0;
-  let totalMaxScore = 0;
-
-  // Run checks for each category
-  Object.entries(CATEGORY_WEIGHTS).forEach(([category, config]) => {
+  for (const [categoryName, category] of Object.entries(CATEGORY_WEIGHTS)) {
     let categoryScore = 0;
+    const categoryPassed: AuditCheck[] = [];
+    const categoryFailed: AuditCheck[] = [];
 
-    config.checks.forEach(checkConfig => {
-      const passed = checkConfig.check(metadata);
-      const check: AuditCheck = {
-        id: checkConfig.id,
-        name: checkConfig.name,
-        passed,
-        weight: checkConfig.weight,
-        category,
-      };
-      checks.push(check);
-
-      if (passed) {
-        categoryScore += checkConfig.weight;
-      }
-
-      // Generate findings for failed checks
-      if (!passed) {
-        findings.push({
-          id: checkConfig.id,
-          category,
-          type: 'warning',
-          title: `Missing: ${checkConfig.name}`,
-          description: `The ${checkConfig.name.toLowerCase()} check failed. This may affect how your page is displayed on social platforms and search engines.`,
-          affectedTags: getAffectedTags(checkConfig.id, metadata),
-          suggestion: getSuggestion(checkConfig.id),
+    for (const check of category.checks) {
+      const checkPassed = check.check(metadata);
+      
+      if (checkPassed) {
+        categoryScore += check.weight;
+        passed.push({
+          id: check.id,
+          name: check.name,
+          passed: true,
+          weight: check.weight,
+          category: categoryName,
+        });
+        categoryPassed.push({
+          id: check.id,
+          name: check.name,
+          passed: true,
+          weight: check.weight,
+          category: categoryName,
+        });
+      } else {
+        failed.push({
+          id: check.id,
+          name: check.name,
+          passed: false,
+          weight: check.weight,
+          category: categoryName,
+        });
+        categoryFailed.push({
+          id: check.id,
+          name: check.name,
+          passed: false,
+          weight: check.weight,
+          category: categoryName,
         });
       }
-    });
+    }
 
-    const maxCategoryScore = config.total;
     categoryScores.push({
-      name: category.charAt(0).toUpperCase() + category.slice(1),
+      name: categoryName,
       score: categoryScore,
-      maxScore: maxCategoryScore,
-      weight: maxCategoryScore,
+      maxScore: category.total,
+      weight: category.total,
     });
 
-    totalScore += categoryScore;
-    totalMaxScore += maxCategoryScore;
-  });
+    // Generate findings and recommendations for failed checks
+    for (const check of categoryFailed) {
+      findings.push({
+        id: check.id,
+        category: categoryName,
+        type: check.weight >= 5 ? 'critical' : 'warning',
+        title: check.name,
+        description: `This check failed with a weight of ${check.weight} points.`,
+        affectedTags: getAffectedTags(categoryName, check.id),
+        suggestion: getSuggestion(categoryName, check.id),
+      });
 
-  // Add findings for duplicates
-  if (metadata.duplicates.length > 0) {
-    findings.push({
-      id: 'duplicate-tags',
-      category: 'Technical',
-      type: 'warning',
-      title: 'Duplicate Meta Tags Detected',
-      description: `Found ${metadata.duplicates.length} duplicate tag(s): ${metadata.duplicates.join(', ')}. Duplicate tags can confuse crawlers and lead to unpredictable behavior.`,
-      affectedTags: metadata.duplicates,
-      suggestion: 'Remove duplicate tags and keep only one instance of each meta tag.',
-    });
-    recommendations.push({
-      priority: 'medium',
-      category: 'Technical',
-      title: 'Remove Duplicate Tags',
-      description: 'Duplicate meta tags can cause inconsistent behavior across platforms.',
-      implementation: 'Remove all but one instance of each duplicate tag.',
-    });
+      recommendations.push({
+        priority: check.weight >= 5 ? 'high' : 'medium',
+        category: categoryName,
+        title: `Fix: ${check.name}`,
+        description: getRecommendationDescription(categoryName, check.id),
+        implementation: getImplementation(categoryName, check.id),
+      });
+    }
   }
-
-  // Add findings for empty tags
-  if (metadata.emptyTags.length > 0) {
-    findings.push({
-      id: 'empty-tags',
-      category: 'General',
-      type: 'info',
-      title: 'Empty or Missing Meta Tags',
-      description: `The following tags are empty or missing: ${metadata.emptyTags.join(', ')}.`,
-      affectedTags: metadata.emptyTags,
-    });
-  }
-
-  // Add recommendations based on missing critical elements
-  if (!metadata.ogTitle) {
-    recommendations.push({
-      priority: 'high',
-      category: 'Open Graph',
-      title: 'Add Open Graph Title',
-      description: 'Open Graph titles are used by social platforms to display your page title.',
-      implementation: 'Add <meta property="og:title" content="Your Title"> to your page head.',
-      codeExample: '<meta property="og:title" content="Your Page Title">',
-    });
-  }
-
-  if (!metadata.ogDescription) {
-    recommendations.push({
-      priority: 'high',
-      category: 'Open Graph',
-      title: 'Add Open Graph Description',
-      description: 'Open Graph descriptions provide a summary of your page content for social sharing.',
-      implementation: 'Add <meta property="og:description" content="Your description"> to your page head.',
-      codeExample: '<meta property="og:description" content="A compelling description of your page content.">',
-    });
-  }
-
-  if (!metadata.ogImage) {
-    recommendations.push({
-      priority: 'high',
-      category: 'Open Graph',
-      title: 'Add Open Graph Image',
-      description: 'Open Graph images make your links visually appealing when shared. Recommended size: 1200x630 pixels.',
-      implementation: 'Add <meta property="og:image" content="https://your-site.com/image.jpg"> to your page head.',
-      codeExample: '<meta property="og:image" content="https://your-site.com/social-image.jpg">',
-    });
-  }
-
-  if (!metadata.twitterCard) {
-    recommendations.push({
-      priority: 'medium',
-      category: 'Twitter Cards',
-      title: 'Add Twitter Card Type',
-      description: 'Twitter Card types define how your content appears on X (Twitter).',
-      implementation: 'Add <meta name="twitter:card" content="summary_large_image"> to your page head.',
-      codeExample: '<meta name="twitter:card" content="summary_large_image">',
-    });
-  }
-
-  if (!metadata.canonical) {
-    recommendations.push({
-      priority: 'medium',
-      category: 'SEO',
-      title: 'Add Canonical URL',
-      description: 'Canonical URLs help search engines understand which version of a page to index.',
-      implementation: 'Add <link rel="canonical" href="https://your-site.com/page"> to your page head.',
-      codeExample: '<link rel="canonical" href="https://your-site.com/current-page">',
-    });
-  }
-
-  // Check for title/description length issues
-  if (metadata.title && typeof metadata.title === 'string' && metadata.title.length < 30) {
-    recommendations.push({
-      priority: 'medium',
-      category: 'SEO',
-      title: 'Lengthen Your Title',
-      description: 'Your HTML title is very short. Longer titles (50-60 characters) typically perform better in search results.',
-      implementation: 'Expand your title to include more relevant keywords while staying under 60 characters.',
-    });
-  }
-
-  if (metadata.description && typeof metadata.description === 'string' && metadata.description.length < 100) {
-    recommendations.push({
-      priority: 'medium',
-      category: 'SEO',
-      title: 'Lengthen Your Description',
-      description: 'Your meta description is quite short. Descriptions between 150-160 characters typically perform better.',
-      implementation: 'Expand your description to provide more context while staying under 160 characters.',
-    });
-  }
-
-  // Generate audit result
-  const overallScore = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
 
   return {
-    score: overallScore,
+    score: 0, // Will be calculated by calculateScore
     maxScore: 100,
     categoryScores,
     findings,
-    passed: checks.filter(c => c.passed),
-    failed: checks.filter(c => !c.passed),
+    passed,
+    failed,
     recommendations,
   };
 }
 
-/**
- * Calculate overall score from audit
- */
 export function calculateScore(audit: AuditResult): number {
-  return audit.score;
+  let totalScore = 0;
+  let totalMax = 0;
+
+  for (const category of audit.categoryScores) {
+    totalScore += category.score;
+    totalMax += category.maxScore;
+  }
+
+  return totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
 }
 
-function getAffectedTags(checkId: string, metadata: ExtractedMetadata): string[] {
-  const tagMap: Record<string, string[]> = {
-    'has-title': ['title'],
-    'title-length': ['title'],
-    'has-description': ['description'],
-    'description-length': ['description'],
-    'has-canonical': ['canonical'],
-    'og-title': ['og:title'],
-    'og-description': ['og:description'],
-    'og-image': ['og:image'],
-    'og-url': ['og:url'],
-    'og-type': ['og:type'],
-    'og-site-name': ['og:site_name'],
-    'og-locale': ['og:locale'],
-    'og-image-dims': ['og:image'],
-    'twitter-card': ['twitter:card'],
-    'twitter-title': ['twitter:title'],
-    'twitter-description': ['twitter:description'],
-    'twitter-image': ['twitter:image'],
-    'language': ['html lang'],
-    'viewport': ['viewport'],
-    'charset': ['charset'],
-    'robots': ['robots'],
-    'favicon': ['favicon'],
-    'no-duplicates': metadata.duplicates,
-  };
-
-  return tagMap[checkId] || [];
-}
-
-function getSuggestion(checkId: string): string {
-  const suggestions: Record<string, string> = {
-    'has-title': 'Add a descriptive <title> tag to your HTML head.',
-    'title-length': 'Adjust your title to be between 50-60 characters for optimal display.',
-    'has-description': 'Add a <meta name="description"> tag with a summary of your page content.',
-    'description-length': 'Adjust your description to be between 150-160 characters for optimal display.',
-    'has-canonical': 'Add a <link rel="canonical"> tag pointing to the preferred URL.',
-    'og-title': 'Add <meta property="og:title"> with your page title.',
-    'og-description': 'Add <meta property="og:description"> with a compelling description.',
-    'og-image': 'Add <meta property="og:image"> with a URL to your social sharing image.',
-    'og-url': 'Add <meta property="og:url"> with the canonical URL of this page.',
-    'og-type': 'Add <meta property="og:type"> with the appropriate type (website, article, etc.).',
-    'og-site-name': 'Add <meta property="og:site_name"> with your website name.',
-    'og-locale': 'Add <meta property="og:locale"> with the appropriate locale (e.g., en_US).',
-    'og-image-dims': 'Ensure your OG image is at least 1200x630 pixels for optimal display.',
-    'twitter-card': 'Add <meta name="twitter:card"> with a card type (summary or summary_large_image).',
-    'twitter-title': 'Add <meta name="twitter:title"> with your page title.',
-    'twitter-description': 'Add <meta name="twitter:description"> with a description.',
-    'twitter-image': 'Add <meta name="twitter:image"> with a URL to your image.',
-    'language': 'Add the lang attribute to your <html> tag (e.g., <html lang="en">).',
-    'viewport': 'Add <meta name="viewport"> for proper mobile rendering.',
-    'charset': 'Add a charset meta tag (e.g., <meta charset="UTF-8">).',
-    'robots': 'Add <meta name="robots"> to control crawler behavior.',
-    'favicon': 'Add a favicon <link> tag for browser tab icons.',
-    'no-duplicates': 'Remove duplicate tags and keep only one instance of each.',
-  };
-
-  return suggestions[checkId] || 'Review and fix this issue for better metadata compatibility.';
-}
-
-/**
- * Get score breakdown for display
- */
-export function getScoreBreakdown(audit: AuditResult): {
-  overall: number;
-  categories: Array<{ name: string; score: number; maxScore: number; percentage: number }>;
-} {
+export function getScoreBreakdown(audit: AuditResult) {
   return {
-    overall: audit.score,
-    categories: audit.categoryScores.map(cat => ({
-      name: cat.name,
-      score: cat.score,
-      maxScore: cat.maxScore,
-      percentage: Math.round((cat.score / cat.maxScore) * 100),
+    categories: audit.categoryScores.map((category) => ({
+      name: category.name,
+      score: category.score,
+      maxScore: category.maxScore,
+      percentage: category.maxScore > 0
+        ? Math.round((category.score / category.maxScore) * 100)
+        : 0,
     })),
   };
+}
+
+function getAffectedTags(category: string, checkId: string): string[] {
+  const tags: Record<string, Record<string, string[]>> = {
+    seo: {
+      'has-title': ['title'],
+      'title-length': ['title'],
+      'has-description': ['description'],
+      'description-length': ['description'],
+      'has-canonical': ['canonical'],
+    },
+    openGraph: {
+      'og-title': ['og:title'],
+      'og-description': ['og:description'],
+      'og-image': ['og:image'],
+      'og-url': ['og:url'],
+      'og-type': ['og:type'],
+      'og-site-name': ['og:site_name'],
+      'og-locale': ['og:locale'],
+      'og-image-dims': ['og:image:width', 'og:image:height'],
+    },
+    twitter: {
+      'twitter-card': ['twitter:card'],
+      'twitter-title': ['twitter:title'],
+      'twitter-description': ['twitter:description'],
+      'twitter-image': ['twitter:image'],
+    },
+    technical: {
+      'language': ['html lang'],
+      'viewport': ['viewport'],
+      'charset': ['charset'],
+      'robots': ['robots'],
+      'favicon': ['favicon'],
+      'no-duplicates': ['duplicates'],
+    },
+  };
+
+  return tags[category]?.[checkId] || [];
+}
+
+function getSuggestion(category: string, checkId: string): string | undefined {
+  const suggestions: Record<string, Record<string, string>> = {
+    seo: {
+      'has-title': 'Add a <title> tag to your HTML.',
+      'title-length': 'Optimize your title to be 50-60 characters long.',
+      'has-description': 'Add a <meta name="description"> tag.',
+      'description-length': 'Optimize your description to be 150-160 characters long.',
+      'has-canonical': 'Add a <link rel="canonical"> tag to prevent duplicate content issues.',
+    },
+    openGraph: {
+      'og-title': 'Add an og:title meta tag for better social sharing.',
+      'og-description': 'Add an og:description meta tag for better social sharing.',
+      'og-image': 'Add an og:image meta tag with a properly sized image (1200x630 recommended).',
+      'og-url': 'Add an og:url meta tag to specify the canonical URL for social sharing.',
+      'og-type': 'Add an og:type meta tag to specify the content type (e.g., website, article).',
+      'og-site-name': 'Add an og:site_name meta tag to identify your website.',
+      'og-locale': 'Add an og:locale meta tag to specify the content language.',
+      'og-image-dims': 'Ensure your OG image is at least 1200x630 pixels for optimal display.',
+    },
+    twitter: {
+      'twitter-card': 'Add a twitter:card meta tag to enable Twitter Card previews.',
+      'twitter-title': 'Add a twitter:title meta tag for Twitter Card previews.',
+      'twitter-description': 'Add a twitter:description meta tag for Twitter Card previews.',
+      'twitter-image': 'Add a twitter:image meta tag for Twitter Card previews.',
+    },
+    technical: {
+      'language': 'Add a lang attribute to your <html> tag (e.g., <html lang="en">).',
+      'viewport': 'Add a viewport meta tag for mobile responsiveness.',
+      'charset': 'Specify the character encoding with a charset meta tag.',
+      'robots': 'Add a robots meta tag to control search engine crawling.',
+      'favicon': 'Add a favicon to improve brand recognition in browser tabs.',
+      'no-duplicates': 'Remove duplicate meta tags to avoid conflicts.',
+    },
+  };
+
+  return suggestions[category]?.[checkId];
+}
+
+function getRecommendationDescription(category: string, checkId: string): string {
+  const descriptions: Record<string, Record<string, string>> = {
+    seo: {
+      'has-title': 'Your page is missing a title tag, which is essential for SEO and user experience.',
+      'title-length': 'Your title length is not optimal for search engine results.',
+      'has-description': 'Add a meta description to improve click-through rates from search results.',
+      'description-length': 'Optimize your meta description length for better search engine display.',
+      'has-canonical': 'Implement canonical URLs to prevent duplicate content penalties.',
+    },
+    openGraph: {
+      'has-title': 'Add Open Graph title for better social media previews.',
+      'has-description': 'Add Open Graph description for better social media previews.',
+      'has-image': 'Add an Open Graph image to make your links visually appealing when shared.',
+      'has-url': 'Specify the canonical URL for Open Graph to ensure consistent sharing.',
+      'has-type': 'Specify the content type for proper rendering on social platforms.',
+      'has-site-name': 'Identify your website with the site name tag.',
+      'has-locale': 'Specify the language locale for international audiences.',
+      'image-dims': 'Use properly sized images for optimal display across all platforms.',
+    },
+    twitter: {
+      'has-card': 'Enable Twitter Cards to enhance how your links appear on Twitter.',
+      'has-title': 'Add a Twitter-specific title for better engagement on Twitter.',
+      'has-description': 'Add a Twitter-specific description for better engagement on Twitter.',
+      'has-image': 'Add a Twitter image to make your tweets more visually appealing.',
+    },
+    technical: {
+      'language': 'Specify the language of your content for accessibility and SEO.',
+      'viewport': 'Ensure your site is mobile-friendly with proper viewport configuration.',
+      'charset': 'Define the character encoding to prevent text rendering issues.',
+      'robots': 'Control how search engines interact with your pages.',
+      'favicon': 'Add a favicon for better brand recognition.',
+      'no-duplicates': 'Clean up duplicate tags to avoid potential conflicts.',
+    },
+  };
+
+  return descriptions[category]?.[checkId] || 'Review and fix this issue for better metadata quality.';
+}
+
+function getImplementation(category: string, checkId: string): string | undefined {
+  const implementations: Record<string, Record<string, string>> = {
+    seo: {
+      'has-title': '<title>Your Page Title</title>',
+      'title-length': 'Keep your title between 50-60 characters: <title>Optimal Title length for SEO</title>',
+      'has-description': '<meta name="description" content="Your description here">',
+      'description-length': 'Write a 150-160 character description: <meta name="description" content="Comprehensive description that provides value and encourages clicks">',
+      'has-canonical': '<link rel="canonical" href="https://example.com/page">',
+    },
+    openGraph: {
+      'og-title': '<meta property="og:title" content="Your Title">',
+      'og-description': '<meta property="og:description" content="Your description">',
+      'og-image': '<meta property="og:image" content="https://example.com/image.jpg">',
+      'og-url': '<meta property="og:url" content="https://example.com/page">',
+      'og-type': '<meta property="og:type" content="website">',
+      'og-site-name': '<meta property="og:site_name" content="Your Site Name">',
+      'og-locale': '<meta property="og:locale" content="en_US">',
+      'og-image-dims': '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">',
+    },
+    twitter: {
+      'twitter-card': '<meta name="twitter:card" content="summary_large_image">',
+      'twitter-title': '<meta name="twitter:title" content="Your Title">',
+      'twitter-description': '<meta name="twitter:description" content="Your description">',
+      'twitter-image': '<meta name="twitter:image" content="https://example.com/image.jpg">',
+    },
+    technical: {
+      'language': '<html lang="en">',
+      'viewport': '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+      'charset': '<meta charset="UTF-8">',
+      'robots': '<meta name="robots" content="index, follow">',
+      'favicon': '<link rel="icon" href="/favicon.ico">',
+      'no-duplicates': 'Review your HTML and remove duplicate meta tags.',
+    },
+  };
+
+  return implementations[category]?.[checkId];
 }

@@ -1,6 +1,8 @@
 import * as cheerio from "cheerio"
 import type { Element } from "domhandler"
 import { type NextRequest, NextResponse } from "next/server"
+import { secureFetch } from "@/lib/security"
+import { SECURITY_CONFIG } from "@/config"
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url")
@@ -14,20 +16,20 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; LinkPreview/1.0; +https://linkpreview.kartikk.tech)",
-      },
+    const response = await secureFetch(url, {
+      timeoutMs: SECURITY_CONFIG.timeoutMs,
+      maxRedirects: SECURITY_CONFIG.maxRedirects,
+      maxSizeBytes: SECURITY_CONFIG.maxSizeBytes,
+      blockedHosts: SECURITY_CONFIG.blockedHosts,
     })
-
-    if (!response.ok) {
+    if (!response.success) {
       return NextResponse.json(
-        { error: `Failed to fetch the URL: ${response.statusText}` },
-        { status: response.status },
+        { error: response.error || "Failed to fetch the URL" },
+        { status: response.status >= 400 ? response.status : 400 },
       )
     }
 
-    const html = await response.text()
+    const html = response.content
     const $ = cheerio.load(html)
 
     const cleanText = (text: string) => {
@@ -127,7 +129,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const urlObj = new URL(url)
+    const urlObj = new URL(response.finalUrl)
     const baseUrl = `${urlObj.protocol}//${urlObj.host}`
 
     const makeAbsoluteUrl = (
@@ -156,9 +158,9 @@ export async function GET(request: NextRequest) {
       const rootFaviconUrl = `${urlObj.protocol}//${urlObj.host}/favicon.ico`
 
       try {
-        const faviconResponse = await fetch(rootFaviconUrl, { method: "HEAD" })
-        if (faviconResponse.ok) {
-          metadata.favicon = rootFaviconUrl
+        const faviconResponse = await secureFetch(rootFaviconUrl)
+        if (faviconResponse.success) {
+          metadata.favicon = faviconResponse.finalUrl
         }
       } catch (error) {
         console.error("Error fetching favicon:", error)
@@ -167,9 +169,9 @@ export async function GET(request: NextRequest) {
 
     const robotsUrl = `${baseUrl}/robots.txt`
     try {
-      const robotsResponse = await fetch(robotsUrl, { method: "HEAD" })
-      if (robotsResponse.ok) {
-        metadata.robotsFile = robotsUrl
+      const robotsResponse = await secureFetch(robotsUrl)
+      if (robotsResponse.success) {
+        metadata.robotsFile = robotsResponse.finalUrl
       }
     } catch (error) {
       console.error("Error fetching robots.txt:", error)
@@ -177,9 +179,9 @@ export async function GET(request: NextRequest) {
 
     const sitemapUrl = `${baseUrl}/sitemap.xml`
     try {
-      const sitemapResponse = await fetch(sitemapUrl, { method: "HEAD" })
-      if (sitemapResponse.ok) {
-        metadata.sitemap = sitemapUrl
+      const sitemapResponse = await secureFetch(sitemapUrl)
+      if (sitemapResponse.success) {
+        metadata.sitemap = sitemapResponse.finalUrl
       }
     } catch (error) {
       console.error("Error fetching sitemap.xml:", error)
