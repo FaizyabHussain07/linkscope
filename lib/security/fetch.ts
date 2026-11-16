@@ -28,20 +28,18 @@ export interface FetchResult {
   error?: string;
 }
 
-// Default configuration
-const DEFAULT_CONFIG: FetchConfig = {
-  timeoutMs: 30000,
-  maxRedirects: 5,
-  maxSizeBytes: 10 * 1024 * 1024,
-  connectTimeoutMs: 10000,
-  allowedContentTypes: [
-    'text/html',
-    'text/plain',
-    'application/xhtml+xml',
-    'application/xml',
-  ],
-  userAgent: 'LinkScope/1.0 (+https://linkscope.faizyab.me)',
-};
+// Default configuration - using const assertions for type safety
+const DEFAULT_TIMEOUT_MS: number = 30000;
+const DEFAULT_MAX_REDIRECTS: number = 5;
+const DEFAULT_MAX_SIZE_BYTES: number = 10 * 1024 * 1024;
+const DEFAULT_CONNECT_TIMEOUT_MS: number = 10000;
+const DEFAULT_ALLOWED_CONTENT_TYPES: string[] = [
+  'text/html',
+  'text/plain',
+  'application/xhtml+xml',
+  'application/xml',
+];
+const DEFAULT_USER_AGENT: string = 'LinkScope/1.0 (+https://linkscope.faizyab.me)';
 
 function isContentTypeAllowed(contentType: string | null, allowedTypes: string[]): boolean {
   if (!contentType) return false;
@@ -58,11 +56,11 @@ export async function secureFetch(
   inputUrl: string,
   config: FetchConfig = {}
 ): Promise<FetchResult> {
-  const timeoutMs: number = config.timeoutMs ?? DEFAULT_CONFIG.timeoutMs;
-  const maxRedirects: number = config.maxRedirects ?? DEFAULT_CONFIG.maxRedirects;
-  const maxSizeBytes: number = config.maxSizeBytes ?? DEFAULT_CONFIG.maxSizeBytes;
-  const allowedContentTypes: string[] = config.allowedContentTypes ?? DEFAULT_CONFIG.allowedContentTypes;
-  const userAgent: string = config.userAgent ?? DEFAULT_CONFIG.userAgent;
+  const timeoutMs: number = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const maxRedirects: number = config.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
+  const maxSizeBytes: number = config.maxSizeBytes ?? DEFAULT_MAX_SIZE_BYTES;
+  const allowedContentTypes: string[] = config.allowedContentTypes ?? DEFAULT_ALLOWED_CONTENT_TYPES;
+  const userAgent: string = config.userAgent ?? DEFAULT_USER_AGENT;
 
   const validation = validateFetchUrl(inputUrl);
   if (!validation.valid) {
@@ -116,7 +114,7 @@ export async function secureFetch(
       const response = await fetch(currentUrl, {
         method: 'GET',
         headers: {
-          'User-Agent': userAgent || 'LinkScope/1.0',
+          'User-Agent': userAgent,
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
         },
@@ -300,7 +298,7 @@ export async function secureImageFetch(
   const imageConfig: FetchConfig = {
     ...config,
     allowedContentTypes: [
-      ...config.allowedContentTypes || DEFAULT_CONFIG.allowedContentTypes,
+      ...(config.allowedContentTypes || DEFAULT_ALLOWED_CONTENT_TYPES),
       'image/jpeg',
       'image/png',
       'image/gif',
